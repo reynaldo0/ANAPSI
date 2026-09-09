@@ -1,0 +1,171 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ */
+/* BLINDSPOT — palet ramah disabilitas (WCAG AA)                       */
+/* - Kontras teks normal >= 4.5:1, teks besar >= 3:1                   */
+/* - Tema terang (default) + tema gelap (untuk fotofobia)              */
+/* - High-contrast / mode kontras tinggi di atas semuanya              */
+/* - Tidak ada gradien aneh; identitas visual via warna solid + ikon,  */
+/*   tidak hanya mengandalkan warna (buta warna tetap terbantu ikon)   */
+/* ------------------------------------------------------------------ */
+:root {
+  --background: #ffffff;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
+
+  --primary: #1d4ed8;
+  --primary-hover: #1e40af;
+  --primary-soft: #dbeafe;
+  --primary-foreground: #ffffff;
+
+  --accent: #0f766e;
+  --accent-soft: #ccfbf1;
+  --accent-foreground: #042f2e;
+
+  --success: #15803d;
+  --success-soft: #dcfce7;
+  --warning: #b45309;
+  --warning-soft: #fef3c7;
+  --danger: #b91c1c;
+  --danger-soft: #fee2e2;
+
+  --muted: #f3f4f6;
+  --muted-foreground: #4b5563;
+  --border: #d1d5db;
+  --input: #9ca3af;
+  --ring: #1d4ed8;
+
+  /* Gradien dihilangkan — "grad-primary" solid mengikuti var(--primary) */
+  --grad-primary: linear-gradient(135deg, #1d4ed8 0%, #1d4ed8 100%);
+}
+
+[data-theme="dark"] {
+  --background: #0b1220;
+  --foreground: #f3f4f6;
+  --card: #111a2b;
+  --card-foreground: #f3f4f6;
+
+  --primary: #3b82f6;
+  --primary-hover: #60a5fa;
+  --primary-soft: #1e293b;
+  --primary-foreground: #ffffff;
+
+  --accent: #2dd4bf;
+  --accent-soft: #0f2e2a;
+  --accent-foreground: #ccfbf1;
+
+  --success: #4ade80;
+  --success-soft: #052e16;
+  --warning: #fbbf24;
+  --warning-soft: #431407;
+  --danger: #f87171;
+  --danger-soft: #450a0a;
+
+  --muted: #1e293b;
+  --muted-foreground: #9ca3af;
+  --border: #334155;
+  --input: #475569;
+  --ring: #60a5fa;
+
+  --grad-primary: linear-gradient(135deg, #3b82f6 0%, #3b82f6 100%);
+}
+
+[data-high-contrast="true"] {
+  --border: #4b5563;
+  --ring: #000000;
+}
+[data-high-contrast="true"][data-theme="dark"] {
+  --border: #e5e7eb;
+  --ring: #ffffff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --radius-8: 10px;
+  --radius-12: 14px;
+  --radius-16: 18px;
+  --radius-24: 26px;
+  --shadow-soft: 0 1px 3px 0 rgb(17 24 39 / 0.06), 0 1px 2px -1px rgb(17 24 39 / 0.06);
+  --shadow-card: 0 6px 24px 0 rgb(17 24 39 / 0.08), 0 1px 3px 0 rgb(17 24 39 / 0.06);
+  --shadow-float: 0 12px 40px 0 rgb(17 24 39 / 0.16);
+  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-slide-up: slide-up 0.25s ease-out;
+  --animate-slide-down: slide-down 0.25s ease-out;
+}
+
+@keyframes fade-in { from { opacity: 0 } to { opacity: 1 } }
+@keyframes slide-up { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes slide-down { from { opacity: 0; transform: translateY(-8px) } to { opacity: 1; transform: translateY(0) } }
+
+@layer base {
+  *, ::before, ::after { border-color: var(--border); }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
+  button, a, [role="button"], input, select { min-height: 44px; }
+  [data-high-contrast="true"] body { font-weight: 500; }
+  ::selection { background: var(--primary-soft); }
+}
+
+/* Utilitas konsisten dengan palet baru */
+.glass {
+  background: color-mix(in srgb, var(--card) 82%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.grad-primary { background: var(--grad-primary); }
+.primary-solid { background: var(--primary); }
+.text-grad {
+  color: var(--primary);
+  -webkit-text-fill-color: var(--primary);
+}
+.card-elevated {
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+
+/* Label/ikon pendamping warna — buta warna tidak hanya bergantung warna */
+.icon-with-label + .sr-text { position: static; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, ::before, ::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* Rasa mobile-app: umpan balik sentuh, area jangkauan nyaman */
+@media (hover: none) {
+  button:active,
+  a:active,
+  [role="button"]:active { transform: scale(0.97); }
+}
