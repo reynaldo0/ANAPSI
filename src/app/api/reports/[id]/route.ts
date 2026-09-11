@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
-import { ApiError, handleApiError, notFound } from "@/lib/api/errors";
+import { ApiError, forbidden, handleApiError, notFound } from "@/lib/api/errors";
 import { ok } from "@/lib/api/response";
-import { getCurrentUser } from "@/lib/auth/current-user";
-import { getReportDetail, isReportCategory, updateReport, type ReportPatch } from "@/lib/data/reports";
+import { requireAuth } from "@/lib/auth/require-session";
+import { getReportAuthorIdentity, getReportDetail, isReportCategory, updateReport, type ReportPatch } from "@/lib/data/reports";
 import type { AffectedProfile, ReportStatus, Severity } from "@/types";
 
 const SEVERITIES: readonly Severity[] = ["HIGH", "MEDIUM", "LOW"];
@@ -42,8 +42,18 @@ export async function PUT(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await getCurrentUser();
+    const session = await requireAuth();
     const { id } = await context.params;
+
+    const before = await getReportDetail(id);
+    if (!before.data) return handleApiError(notFound("Laporan tidak ditemukan."));
+
+    // Hanya admin atau penulis laporan yang dapat mengubah konten laporan.
+    const { authorId } = await getReportAuthorIdentity(id);
+    const isOwner = authorId !== null && authorId === session.id;
+    if (session.role !== "ADMIN" && !isOwner) {
+      throw forbidden("Kamu hanya dapat mengubah laporan milikmu sendiri.");
+    }
 
     let body: { category?: unknown; description?: unknown; severity?: unknown; status?: unknown; affectedProfiles?: unknown };
     try {
@@ -79,7 +89,7 @@ export async function PUT(
       patch.affectedProfiles = body.affectedProfiles as AffectedProfile[];
     }
     if (body.status !== undefined) {
-      if (session?.role !== "ADMIN") {
+      if (session.role !== "ADMIN") {
         throw new ApiError(403, "FORBIDDEN", "Hanya admin yang dapat mengubah status laporan.");
       }
       if (!STATUSES.includes(body.status as ReportStatus)) {
@@ -87,9 +97,6 @@ export async function PUT(
       }
       patch.status = body.status as ReportStatus;
     }
-
-    const before = await getReportDetail(id);
-    if (!before.data) return handleApiError(notFound("Laporan tidak ditemukan."));
 
     const { data, source } = await updateReport(id, patch);
     return ok({ report: data, source });

@@ -1,16 +1,13 @@
 import { cookies } from "next/headers";
 import { getDb } from "@/lib/db";
-import {
-  SESSION_COOKIE,
-  sessionPayloadToUser,
-  verifySessionToken,
-} from "@/lib/auth/session";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth/session";
+import { findUserById } from "@/lib/users";
 import type { PublicUser } from "@/types";
 
 /**
  * Membaca pengguna yang sedang login dari cookie sesi HMAC.
- * Jika database nyata tersedia, selalu memakai data segar dari DB
- * (pengguna yang dihapus otomatis tidak login lagi).
+ * Selalu memakai data pengguna terkini (pengguna yang dihapus otomatis
+ * tidak login lagi), baik dari database nyata maupun store demo.
  */
 export async function getCurrentUser(): Promise<PublicUser | null> {
   const cookieStore = await cookies();
@@ -19,21 +16,22 @@ export async function getCurrentUser(): Promise<PublicUser | null> {
 
   const payload = verifySessionToken(token);
   if (!payload) return null;
-  const sessionUser: PublicUser = sessionPayloadToUser(payload);
 
   const db = getDb();
-  if (!db) return sessionUser;
+  if (db) {
+    const fresh = await db.user.findUnique({
+      where: { id: payload.sub },
+      select: { id: true, email: true, displayName: true, role: true },
+    });
+    if (!fresh) return null;
+    return {
+      id: fresh.id,
+      email: fresh.email,
+      displayName: fresh.displayName,
+      role: fresh.role,
+    };
+  }
 
-  const fresh = await db.user.findUnique({
-    where: { id: payload.sub },
-    select: { id: true, email: true, displayName: true, role: true },
-  });
-  if (!fresh) return null;
-
-  return {
-    id: fresh.id,
-    email: fresh.email,
-    displayName: fresh.displayName,
-    role: fresh.role,
-  };
+  const fresh = await findUserById(payload.sub);
+  return fresh ?? null;
 }

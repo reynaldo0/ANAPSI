@@ -1,11 +1,10 @@
-import { Prisma } from "@prisma/client";
 import { ApiError, handleApiError } from "@/lib/api/errors";
 import {
   checkRateLimit,
   clientIp,
   rateLimitKey,
 } from "@/lib/api/rate-limit";
-import { created, fail } from "@/lib/api/response";
+import { created } from "@/lib/api/response";
 import {
   asString,
   buildErrors,
@@ -20,7 +19,7 @@ import {
   SESSION_COOKIE,
   SESSION_COOKIE_OPTIONS,
 } from "@/lib/auth/session";
-import { requireDatabase } from "@/lib/db";
+import { registerUser } from "@/lib/users";
 
 interface RegisterBody {
   displayName?: unknown;
@@ -32,7 +31,7 @@ export async function POST(request: Request) {
   try {
     const limit = checkRateLimit(rateLimitKey(clientIp(request), "register"), 5, 60_000);
     if (!limit.allowed) {
-      return fail("Terlalu banyak percobaan. Coba lagi nanti.", "RATE_LIMITED", 429);
+      throw new ApiError(429, "RATE_LIMITED", "Terlalu banyak percobaan. Coba lagi nanti.");
     }
 
     let body: RegisterBody;
@@ -49,14 +48,18 @@ export async function POST(request: Request) {
     const errors = buildErrors([
       {
         field: "displayName",
-        ok: required(displayName) && displayName.length >= 2,
-        message: "Nama minimal 2 karakter.",
+        ok: required(displayName) && displayName.length >= 2 && displayName.length <= 50,
+        message: "Nama wajib diisi (2–50 karakter).",
       },
-      { field: "email", ok: isEmail(email), message: "Format email tidak valid." },
+      {
+        field: "email",
+        ok: isEmail(email) && email.length <= 254,
+        message: "Format email tidak valid.",
+      },
       {
         field: "password",
-        ok: minLength(password, 8),
-        message: "Kata sandi minimal 8 karakter.",
+        ok: minLength(password, 8) && password.length <= 128,
+        message: "Kata sandi minimal 8 dan maksimal 128 karakter.",
       },
     ]);
     if (hasErrors(errors)) {
@@ -68,43 +71,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const db = requireDatabase();
-    const existing = await db.user.findUnique({ where: { email } });
-    if (existing) {
-      throw new ApiError(
-        409,
-        "EMAIL_TAKEN",
-        "Email sudah terdaftar. Coba masuk atau gunakan email lain.",
-      );
-    }
-
     const passwordHash = await hashPassword(password);
-    let user;
-    try {
-      user = await db.user.create({
-        data: { email, displayName, passwordHash },
-        select: { id: true, email: true, displayName: true, role: true },
-      });
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === "P2002"
-      ) {
-        throw new ApiError(
-          409,
-          "EMAIL_TAKEN",
-          "Email sudah terdaftar. Coba masuk atau gunakan email lain.",
-        );
-      }
-      throw error;
-    }
-
-    const publicUser = {
-      id: user.id,
-      email: user.email,
-      displayName: user.displayName,
-      role: user.role,
-    };
+    const publicUser = await registerUser({ email, displayName, passwordHash });
 
     let token: string;
     try {

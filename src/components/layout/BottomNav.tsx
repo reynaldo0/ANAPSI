@@ -35,6 +35,7 @@ function isActive(pathname: string, href: string): boolean {
 
 export function BottomNav() {
   const pathname = usePathname();
+  if (pathname === "/map") return null;
 
   return (
     <nav

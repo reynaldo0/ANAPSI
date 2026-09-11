@@ -3,6 +3,7 @@ import { ApiError, handleApiError } from "@/lib/api/errors";
 import { checkRateLimit, clientIp, rateLimitKey } from "@/lib/api/rate-limit";
 import { ok } from "@/lib/api/response";
 import { findDemoPlace, planRoutes } from "@/lib/data/route-engine";
+import { planStreetRoutes } from "@/lib/data/route-real";
 import type { AccessibilityProfileType, LatLng } from "@/types";
 
 function isProfile(value: unknown): value is AccessibilityProfileType {
@@ -55,8 +56,13 @@ export async function POST(request: NextRequest) {
     const originName =
       typeof body.originName === "string" && body.originName.length > 0 ? body.originName.trim() : "Lokasiku";
 
+    const street = await planStreetRoutes(body.origin, originName, destination, body.profile);
+    if (street.real && street.routes.length > 0) {
+      return ok({ routes: street.routes, source: street.source, real: true });
+    }
+
     const { routes, source } = planRoutes(body.origin, originName, destination, body.profile);
-    return ok({ routes, source });
+    return ok({ routes, source, real: false });
   } catch (error) {
     return handleApiError(error);
   }

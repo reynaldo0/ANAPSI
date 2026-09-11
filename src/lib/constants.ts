@@ -58,6 +58,7 @@ export const ONBOARDING_CHOICES: readonly OnboardingChoiceMeta[] = [
 
 export const STORAGE_KEYS = {
   appearance: "blindspot:appearance",
+  handsFree: "blindspot:handsFree",
   profile: "blindspot:profile",
   session: "blindspot:session",
   userType: "blindspot:userType",

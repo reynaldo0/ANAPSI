@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Crosshair, Maximize, Navigation, Satellite } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Crosshair, Maximize, Navigation, Satellite } from "lucide-react";
 import { haversineKm } from "@/lib/geo";
 import { announceLiveRegion } from "@/lib/announcement";
 import { fetchGuidingLines, bboxFromPolyline } from "@/lib/realtimeOverpass";
@@ -12,10 +12,15 @@ interface JourneyMapProps {
   route: RouteOption;
   stepIndex: number;
   onStepReached: (index: number) => void;
+  onNext?: () => void;
+  onPrev?: () => void;
 }
 
 const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
 const ARRIVAL_TRIGGER_M = 8;
+
+/** Tinggi cluster tombol navigasi mengambang (px) agar bisa dihitung zona aman. */
+const FLOAT_W = 112;
 
 function cumMetersTable(points: LatLng[]): number[] {
   const table = [0];
@@ -69,7 +74,7 @@ function projectAlong(points: LatLng[], table: number[], pos: LatLng): number {
   return bestMeters;
 }
 
-export function JourneyMap({ route, stepIndex, onStepReached }: JourneyMapProps) {
+export function JourneyMap({ route, stepIndex, onStepReached, onNext, onPrev }: JourneyMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
@@ -88,6 +93,28 @@ export function JourneyMap({ route, stepIndex, onStepReached }: JourneyMapProps)
       : "unsupported",
   );
   const [guidingReload, setGuidingReload] = useState(0);
+  const [floatPos, setFloatPos] = useState<{ x: number; y: number } | null>(null);
+
+  /** Posisi layar (px, relatif kontainer) untuk tombol navigasi mengambang, diklamp ke zona aman. */
+  const updateFloatPos = useCallback(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const m = mapRef.current as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const um = userMarkerRef.current as any;
+    const el = containerRef.current;
+    if (!m || !um || !el) return;
+    try {
+      const lngLat = um.getLngLat() as { lng: number; lat: number };
+      const p = m.project([lngLat.lng, lngLat.lat]);
+      const w = el.clientWidth;
+      const h = el.clientHeight;
+      const half = FLOAT_W / 2;
+      const x = Math.max(16 + half, Math.min(w - 16 - half, p.x));
+      const y = Math.max(132, Math.min(h - 16 - 48, p.y - 64));
+      const next = { x: Math.round(x), y: Math.round(y) };
+      setFloatPos((prev) => (prev && Math.abs(prev.x - next.x) < 2 && Math.abs(prev.y - next.y) < 2 ? prev : next));
+    } catch {}
+  }, []);
 
   const geometry = useMemo(() => route.geometry ?? [], [route]);
   const table = useMemo(() => cumMetersTable(geometry), [geometry]);
@@ -211,6 +238,7 @@ export function JourneyMap({ route, stepIndex, onStepReached }: JourneyMapProps)
           }
           setLoaded(true);
           announceLiveRegion("Peta 3D rute siap. Posisimu akan ditandai otomatis bila sinyal GPS tersedia.");
+          updateFloatPos();
         });
 
         // Pin: mulai, tujuan, dan tiap titik instruksi.
@@ -295,13 +323,17 @@ export function JourneyMap({ route, stepIndex, onStepReached }: JourneyMapProps)
           addMarker(pointAtMeters(geometry, table, Math.max(0, f.distanceMeters * k)), el, `Fasilitas: ${f.label}.`);
         });
 
-        // Titik posisi pengguna (GPS) — biru berdenyut.
-        const userEl = document.createElement("div");
+        // Titik posisi pengguna (GPS) — siluet orang (posisi terkini).
+        const userEl = document.createElement("button");
+        userEl.setAttribute("type", "button");
         userEl.setAttribute("aria-label", "Posisimu saat ini");
-        userEl.style.cssText = "width:26px;height:26px;border-radius:9999px;background:#2563eb;border:4px solid #fff;box-shadow:0 0 0 8px rgba(37,99,235,.22),0 2px 12px rgba(0,0,0,.4);";
+        userEl.style.cssText = "width:32px;height:32px;border-radius:9999px;background:#2563eb;border:3px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 8px rgba(37,99,235,.22),0 2px 12px rgba(0,0,0,.4);cursor:pointer;";
+        userEl.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1"/><path d="m9 20 3-6 3 6"/><path d="m6 8 6 2 6-2"/><path d="M12 10v4"/></svg>`;
         try {
           userMarkerRef.current = new Marker({ element: userEl }).setLngLat([mid.lng, mid.lat]).addTo(m);
         } catch {}
+        updateFloatPos();
+        m.on("move", updateFloatPos);
       } catch {
         if (!cancelled) setMapError(true);
       }
@@ -388,6 +420,7 @@ export function JourneyMap({ route, stepIndex, onStepReached }: JourneyMapProps)
         try {
           userMarkerRef.current?.setLngLat?.([pos.lng, pos.lat]);
         } catch {}
+        updateFloatPos();
         const now = Date.now();
         if (followRef.current && m && now - lastEaseRef.current > 900) {
           lastEaseRef.current = now;
@@ -508,6 +541,35 @@ export function JourneyMap({ route, stepIndex, onStepReached }: JourneyMapProps)
           <Maximize className="h-5 w-5" aria-hidden="true" />
         </button>
       </div>
+
+      {/* Tombol navigasi mengambang: ikut posisi pengguna otomatis, tetap bisa diklik. */}
+      {floatPos && (onPrev || onNext) ? (
+        <div
+          className="absolute z-20 flex items-center gap-2 rounded-full border border-border/60 bg-card/90 p-1.5 shadow-float backdrop-blur"
+          style={{ left: floatPos.x, top: floatPos.y, transform: "translate(-50%, 0)" }}
+        >
+          <button
+            type="button"
+            onClick={onPrev}
+            disabled={!onPrev || stepIndex === 0}
+            aria-label="Segmen sebelumnya"
+            className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-border bg-background text-foreground transition-transform active:scale-95 disabled:opacity-40"
+          >
+            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <span className="sr-only">{`Segmen ${Math.min(stepIndex + 1, route.steps.length - 1)} dari ${route.steps.length - 1}`}</span>
+          <button
+            type="button"
+            onClick={onNext}
+            disabled={!onNext || stepIndex >= route.steps.length - 1}
+            aria-label="Segmen berikutnya"
+            className="flex h-11 w-11 items-center justify-center rounded-full primary-solid text-primary-foreground transition-transform active:scale-95 disabled:opacity-40"
+          >
+            <ChevronRight className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
+      ) : null}
+
       <p className="sr-only" aria-live="polite">
         {status === "active"
           ? "Sinyal GPS aktif. Titik biru menunjukkan posisimu; peta mengikuti secara otomatis."

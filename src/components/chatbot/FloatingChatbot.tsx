@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Bot, X, Mic, Send, Volume2, Maximize2 } from "lucide-react";
 import { useAudioManager } from "@/lib/audio/AudioManager";
 import { useSpeechRecognition } from "@/lib/voice/useSpeechRecognition";
@@ -14,6 +15,8 @@ export function FloatingChatbot() {
   const audio = useAudioManager();
   const voice = useSpeechRecognition();
   const panelRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  if (pathname === "/map") return null;
 
   const send = async (text: string) => {
     const t = text.trim();

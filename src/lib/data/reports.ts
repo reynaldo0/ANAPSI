@@ -1,4 +1,6 @@
+import { ApiError } from "@/lib/api/errors";
 import { getDb } from "@/lib/db";
+import { readJsonFile, writeJsonFile } from "@/lib/file-storage";
 import { demoPlaces, demoReports } from "@/lib/data/demo-data";
 import { reportCategoryLabel } from "@/lib/constants";
 import { structureReportTranscript } from "@/lib/voice/report-structurer";
@@ -19,6 +21,8 @@ import type {
 
 export interface ReportVerificationRecord extends ReportVerificationInfo {
   type: VerificationType;
+  /** Kunci verifikator aman sisi-server (untuk cegah verifikasi ganda/anonym). */
+  verifierKey?: string | null;
 }
 
 export interface ReportListFilters {
@@ -26,17 +30,6 @@ export interface ReportListFilters {
   mine?: boolean;
   profile?: AffectedProfile;
   authorId?: string;
-}
-
-export interface ReportListFilters {
-  placeId?: string;
-  mine?: boolean;
-  profile?: AffectedProfile;
-  authorId?: string;
-}
-
-export interface ReportVerificationRecord extends ReportVerificationInfo {
-  type: VerificationType;
 }
 
 interface StoredReport {
@@ -46,10 +39,18 @@ interface StoredReport {
   verifications: ReportVerificationRecord[];
 }
 
-const demoStore: StoredReport[] = [];
+const STORAGE_FILE = "reports";
+const MAX_VERIFICATIONS_PER_REPORT = 30;
+const MAX_PHOTOS_PER_REPORT = 5;
+
+let reports: StoredReport[] | null = null;
+
+function persistReports(): void {
+  if (reports) writeJsonFile(STORAGE_FILE, reports);
+}
 
 function seedFromDemo(): StoredReport[] {
-  if (demoStore.length > 0) return demoStore;
+  const seeded: StoredReport[] = [];
   for (const report of demoReports) {
     const place = demoPlaces.find((p) => p.id === report.placeId);
     const structured = structureReportTranscript(report.title);
@@ -65,8 +66,9 @@ function seedFromDemo(): StoredReport[] {
             },
           ]
         : [];
-    demoStore.push({
+    seeded.push({
       authorId: null,
+      reporterId: null,
       detail: {
         id: report.id,
         category: structured.category,
@@ -95,7 +97,20 @@ function seedFromDemo(): StoredReport[] {
       verifications: seedVerifications,
     });
   }
-  return demoStore;
+  return seeded;
+}
+
+/** Memuat penyimpanan laporan (dari file bila ada, dari demo bila kosong). */
+function loadReports(): StoredReport[] {
+  if (reports) return reports;
+  const fromFile = readJsonFile<StoredReport[]>(STORAGE_FILE, []);
+  if (fromFile.length > 0) {
+    reports = fromFile;
+    return fromFile;
+  }
+  reports = seedFromDemo();
+  persistReports();
+  return reports;
 }
 
 function categoryIsValid(category: string): category is ReportCategory {
@@ -122,11 +137,22 @@ export async function listReports(filters: ReportListFilters = {}): Promise<{
 }> {
   const db = getDb();
   if (!db) {
-    let all = seedFromDemo().map((s) => s.detail);
-    if (filters.placeId) all = all.filter((r) => r.placeId === filters.placeId);
-    if (filters.mine && !filters.authorId) return { data: [], source: "demo" };
-    if (filters.mine) all = all.filter((r) => r.source === "user");
-    return { data: all, source: "demo" };
+    const stored = loadReports().filter((s) => {
+      if (filters.placeId && s.detail.placeId !== filters.placeId) return false;
+      if (filters.mine && s.authorId !== filters.authorId) return false;
+      if (
+        filters.profile &&
+        filters.profile !== "BOTH" &&
+        !s.detail.affectedProfiles.includes(filters.profile)
+      ) {
+        return false;
+      }
+      return true;
+    });
+    const data = stored
+      .map((s) => s.detail)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return { data, source: "demo" };
   }
 
   const rows = await db.accessibilityReport.findMany({
@@ -159,7 +185,7 @@ export async function listReportsAdmin(status?: ReportStatus | null): Promise<{
 }> {
   const db = getDb();
   if (!db) {
-    const all = seedFromDemo().map((s) => s.detail);
+    const all = loadReports().map((s) => s.detail);
     const filtered = status ? all.filter((r) => r.status === status) : all;
     return { data: filtered, source: "demo" };
   }
@@ -181,7 +207,7 @@ export async function listReportsAdmin(status?: ReportStatus | null): Promise<{
 export async function getReportDetail(id: string): Promise<{ data: ReportDetail | null; source: string }> {
   const db = getDb();
   if (!db) {
-    const stored = seedFromDemo().find((s) => s.detail.id === id);
+    const stored = loadReports().find((s) => s.detail.id === id);
     return { data: stored?.detail ?? null, source: "demo" };
   }
 
@@ -283,6 +309,7 @@ export async function createReport(
   author: PublicUser | null,
 ): Promise<{ data: ReportDetail; source: string }> {
   const db = getDb();
+  const media = (input.media ?? []).slice(0, MAX_PHOTOS_PER_REPORT);
   if (!db) {
     const now = new Date().toISOString();
     const place = input.placeId ? demoPlaces.find((p) => p.id === input.placeId) : undefined;
@@ -303,7 +330,7 @@ export async function createReport(
       verification: "UNKNOWN",
       createdAt: now,
       updatedAt: now,
-      media: (input.media ?? []).map((m, index) => ({
+      media: media.map((m, index) => ({
         id: `media-${Date.now()}-${index}`,
         kind: "photo",
         url: m.url,
@@ -316,7 +343,8 @@ export async function createReport(
       moderationNotes: null,
       source: "user",
     };
-    seedFromDemo().push({ detail, authorId: author?.id ?? null, reporterId: input.reporterId ?? null, verifications: [] });
+    loadReports().push({ detail, authorId: author?.id ?? null, reporterId: input.reporterId ?? null, verifications: [] });
+    persistReports();
     return { data: detail, source: "user" };
   }
 
@@ -332,9 +360,7 @@ export async function createReport(
       aiGenerated: input.aiSuggested ?? false,
       latitude: input.latitude ?? null,
       longitude: input.longitude ?? null,
-      media: input.media
-        ? { create: input.media.map((m) => ({ kind: "photo", url: m.url, caption: m.caption ?? null })) }
-        : undefined,
+      media: media.length > 0 ? { create: media.map((m) => ({ kind: "photo", url: m.url, caption: m.caption ?? null })) } : undefined,
     },
     include: {
       place: true,
@@ -362,7 +388,7 @@ export interface ReportPatch {
 export async function updateReport(id: string, patch: ReportPatch): Promise<{ data: ReportDetail | null; source: string }> {
   const db = getDb();
   if (!db) {
-    const stored = seedFromDemo().find((s) => s.detail.id === id);
+    const stored = loadReports().find((s) => s.detail.id === id);
     if (!stored) return { data: null, source: "demo" };
     const next = {
       ...stored.detail,
@@ -381,6 +407,7 @@ export async function updateReport(id: string, patch: ReportPatch): Promise<{ da
       updatedAt: new Date().toISOString(),
     };
     stored.detail = next;
+    persistReports();
     return { data: next, source: "demo" };
   }
 
@@ -409,7 +436,6 @@ export async function updateReport(id: string, patch: ReportPatch): Promise<{ da
 export function applyLifecycle(status: ReportStatus, type: VerificationType): ReportStatus {
   switch (type) {
     case "CONFIRMED":
-      if (status === "PENDING" || status === "VERIFIED" || status === "ACTIVE") return "ACTIVE";
       return "ACTIVE";
     case "CHANGED":
       return "OUTDATED";
@@ -418,16 +444,81 @@ export function applyLifecycle(status: ReportStatus, type: VerificationType): Re
   }
 }
 
+/**
+ * Identitas pembuat laporan untuk kontrol akses dan atribusi poin.
+ * Kunci `reporterKey` adalah identitas aman sisi-server (user atau hash IP).
+ */
+export async function getReportAuthorIdentity(id: string): Promise<{
+  authorId: string | null;
+  reporterKey: string | null;
+  found: boolean;
+}> {
+  const db = getDb();
+  if (!db) {
+    const stored = loadReports().find((s) => s.detail.id === id);
+    return {
+      authorId: stored?.authorId ?? null,
+      reporterKey: stored?.reporterId ?? null,
+      found: Boolean(stored),
+    };
+  }
+  const row = await db.accessibilityReport.findUnique({
+    where: { id },
+    select: { authorId: true },
+  });
+  return {
+    authorId: row?.authorId ?? null,
+    reporterKey: row?.authorId ? `user:${row.authorId}` : null,
+    found: Boolean(row),
+  };
+}
+
+function assertNotSelfVerification(
+  callerKey: string | null | undefined,
+  authorId: string | null | undefined,
+  reporterKey: string | null | undefined,
+): void {
+  if (!callerKey) return;
+  const authorKey = authorId ? `user:${authorId}` : reporterKey ?? null;
+  if (authorKey && callerKey === authorKey) {
+    throw new ApiError(
+      409,
+      "SELF_VERIFICATION",
+      "Kamu tidak dapat memverifikasi laporanmu sendiri. Ekspektasi: verifikasi datang dari pengguna lain.",
+    );
+  }
+}
+
 export async function addReportVerification(
   id: string,
   type: VerificationType,
   comment: string | null,
   user: PublicUser | null,
+  callerKey?: string | null,
 ): Promise<{ data: ReportDetail | null; source: string; gamification?: GamificationStats }> {
   const db = getDb();
   if (!db) {
-    const stored = seedFromDemo().find((s) => s.detail.id === id);
+    const stored = loadReports().find((s) => s.detail.id === id);
     if (!stored) return { data: null, source: "demo" };
+
+    assertNotSelfVerification(callerKey, stored.authorId, stored.reporterId);
+
+    if (stored.verifications.length >= MAX_VERIFICATIONS_PER_REPORT) {
+      throw new ApiError(
+        409,
+        "VERIFICATION_LIMIT",
+        `Laporan sudah menerima ${MAX_VERIFICATIONS_PER_REPORT} verifikasi.`,
+      );
+    }
+    if (
+      callerKey &&
+      stored.verifications.some(
+        (v) => v.verifierKey && v.verifierKey === callerKey && v.type === type,
+      )
+    ) {
+      throw new ApiError(409, "ALREADY_VERIFIED", "Kamu sudah memverifikasi kondisi ini.");
+    }
+
     const at = new Date().toISOString();
     stored.verifications.unshift({
       id: `ver-${Date.now()}`,
@@ -435,6 +526,7 @@ export async function addReportVerification(
       comment,
       userName: user?.displayName ?? null,
       at,
+      verifierKey: callerKey ?? null,
     });
     const nextStatus = applyLifecycle(stored.detail.status, type);
     stored.detail = {
@@ -446,8 +538,12 @@ export async function addReportVerification(
       verifications: stored.verifications,
       updatedAt: at,
     };
+    persistReports();
+
+    // Poin "kontribusi terkonfirmasi" hanya untuk konfirmasi dari komunitas
+    // (bukan laporan milik sendiri, sudah diblokir di atas).
     let gamification: GamificationStats | undefined;
-    if (stored.reporterId) {
+    if (stored.reporterId && type === "CONFIRMED") {
       gamification = markReportVerified(stored.reporterId);
     }
     return { data: stored.detail, source: "demo", gamification };
@@ -455,9 +551,28 @@ export async function addReportVerification(
 
   const current = await db.accessibilityReport.findUnique({
     where: { id },
-    select: { status: true },
+    select: { status: true, authorId: true },
   });
   if (!current) return { data: null, source: "database" };
+
+  assertNotSelfVerification(user?.id ? `user:${user.id}` : callerKey, current.authorId, null);
+
+  const verificationCount = await db.reportVerification.count({ where: { reportId: id } });
+  if (verificationCount >= MAX_VERIFICATIONS_PER_REPORT) {
+    throw new ApiError(
+      409,
+      "VERIFICATION_LIMIT",
+      `Laporan sudah menerima ${MAX_VERIFICATIONS_PER_REPORT} verifikasi.`,
+    );
+  }
+  if (user) {
+    const duplicate = await db.reportVerification.findFirst({
+      where: { reportId: id, userId: user.id, verificationType: type },
+    });
+    if (duplicate) {
+      throw new ApiError(409, "ALREADY_VERIFIED", "Kamu sudah memverifikasi kondisi ini.");
+    }
+  }
 
   const nextStatus = applyLifecycle(current.status as ReportStatus, type);
   await db.reportVerification.create({
@@ -481,5 +596,10 @@ export async function addReportVerification(
       verifications: { orderBy: { verifiedAt: "desc" } },
     },
   });
-  return { data: toDetail(updated), source: "database" };
+
+  let gamification: GamificationStats | undefined;
+  if (current.authorId && type === "CONFIRMED") {
+    gamification = markReportVerified(`user:${current.authorId}`);
+  }
+  return { data: toDetail(updated), source: "database", gamification };
 }

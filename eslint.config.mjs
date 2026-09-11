@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Referensi proyek lain (bukan bagian aplikasi BLINDSPOT):
+    "NADI-WebGis/**",
   ]),
 ]);
 

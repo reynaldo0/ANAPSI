@@ -4,6 +4,7 @@ import { checkRateLimit, clientIp, rateLimitKey } from "@/lib/api/rate-limit";
 import { ok } from "@/lib/api/response";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { addReportVerification } from "@/lib/data/reports";
+import { reporterKey } from "@/lib/reporter-key";
 import { VERIFICATION_TYPES, type VerificationType } from "@/types";
 
 export async function handleReportVerification(
@@ -36,7 +37,13 @@ export async function handleReportVerification(
       throw new ApiError(422, "VALIDATION_ERROR", "Komentar maksimal 500 karakter.");
     }
 
-    const { data, source, gamification } = await addReportVerification(id, type, comment, session);
+    const { data, source, gamification } = await addReportVerification(
+      id,
+      type,
+      comment,
+      session,
+      reporterKey(ip, session),
+    );
     if (!data) return handleApiError(notFound("Laporan tidak ditemukan."));
     return ok(gamification ? { report: data, source, gamification } : { report: data, source });
   } catch (error) {

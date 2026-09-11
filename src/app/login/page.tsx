@@ -83,6 +83,14 @@ function LoginForm() {
         </Button>
       </form>
 
+      <p className="mt-4 rounded-14 border border-border bg-muted px-4 py-3 text-xs leading-relaxed text-muted-foreground">
+        <strong className="text-foreground">Mode demo:</strong> pengguna contoh{" "}
+        <code className="rounded bg-background px-1">demo@blindspot.id</code> /{" "}
+        <code className="rounded bg-background px-1">demo12345</code> · admin contoh{" "}
+        <code className="rounded bg-background px-1">admin@blindspot.id</code> /{" "}
+        <code className="rounded bg-background px-1">admin12345</code>
+      </p>
+
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Belum punya akun?{" "}
         <Link href="/register" className="font-bold text-primary underline underline-offset-2 hover:text-primary-hover">

@@ -11,10 +11,11 @@ import { useToast } from "@/components/ui/Toast";
 import { TourTrigger } from "@/components/tutorial/TourTrigger";
 import { useAuth } from "@/lib/state/AuthContext";
 import { useGamification } from "@/lib/state/GamificationContext";
-import { badgeById } from "@/lib/data/gamification";
+import { badgeById } from "@/lib/gamification-defs";
 import { useSpeechRecognition } from "@/lib/voice/useSpeechRecognition";
 import { structureReportTranscript } from "@/lib/voice/report-structurer";
 import { announceLiveRegion } from "@/lib/announcement";
+import { cn } from "@/lib/cn";
 import {
   AFFECTED_PROFILES,
   ALLOWED_PHOTO_TYPES,
@@ -335,6 +336,39 @@ export function ReportFlow() {
       <h1 className="text-h1 font-bold" tabIndex={-1} ref={headingRef}>
         {step === "method" ? "Lapor Hambatan Aksesibilitas" : step === "review" ? "Tinjau laporan" : "Detail laporan"}
       </h1>
+      <p className="mt-2 text-muted-foreground">
+        Ramah & cepat — kamu cuma perlu 3 langkah.
+      </p>
+      <ol className="mt-4 grid grid-cols-3 gap-2" aria-label="Tahapan melapor">
+        {[
+          ["method", "1", "Pilih cara", "Ketik, bicara, atau foto"],
+          ["form", "2", "Isi detail", "Apa, siapa yang terdampak, di mana"],
+          ["review", "3", "Kirim", "Tinjau sebentar, lalu laporkan"],
+        ].map(([value, number, label, note]) => {
+          const done =
+            (step === "form" && (value === "method" || value === "form")) ||
+            (step === "review" && value !== "review");
+          const active = step === value;
+          return (
+            <li
+              key={value}
+              className={cn(
+                "rounded-14 border-2 p-3",
+                active ? "border-primary bg-primary-soft" : done ? "border-success/40" : "border-border bg-card",
+              )}
+              aria-current={active ? "step" : undefined}
+            >
+              <p className={cn("flex items-center gap-1.5 text-sm font-black", active ? "text-primary" : done ? "text-success" : "text-muted-foreground")}>
+                <span className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-current text-xs">
+                  {done ? "✓" : number}
+                </span>
+                {label}
+              </p>
+              <p className="mt-1 text-[11px] leading-tight text-muted-foreground">{note}</p>
+            </li>
+          );
+        })}
+      </ol>
       {user ? (
         <p className="mt-1 text-sm text-muted-foreground">Melapor sebagai {user.displayName}.</p>
       ) : (

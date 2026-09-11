@@ -1,8 +1,16 @@
 import type { NextRequest } from "next/server";
 import { ApiError, handleApiError } from "@/lib/api/errors";
 import { ok } from "@/lib/api/response";
+import { checkRateLimit, clientIp, rateLimitKey } from "@/lib/api/rate-limit";
 import { requireAuth } from "@/lib/auth/require-session";
 import { assertKnownPlaceId, isSaved, listSavedFor, removeSaved, toggleSaved } from "@/lib/data/saved";
+
+async function enforceWriteLimit(request: NextRequest): Promise<void> {
+  const limit = checkRateLimit(rateLimitKey(clientIp(request), "saved:write"), 30, 60_000);
+  if (!limit.allowed) {
+    throw new ApiError(429, "RATE_LIMITED", `Terlalu banyak permintaan. Coba lagi dalam ${limit.retryAfterSeconds} detik.`);
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,6 +34,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await requireAuth();
+    await enforceWriteLimit(request);
     let body: { placeId?: unknown };
     try {
       body = (await request.json()) as typeof body;
@@ -46,6 +55,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const session = await requireAuth();
+    await enforceWriteLimit(request);
     const url = new URL(request.url);
     const placeId = url.searchParams.get("placeId");
     if (typeof placeId !== "string" || placeId.length === 0) {

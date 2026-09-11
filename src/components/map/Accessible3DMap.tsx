@@ -1,7 +1,10 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, Layers3, Locate } from "lucide-react";
 import { announceLiveRegion } from "@/lib/announcement";
+import { useAudioManager } from "@/lib/audio/AudioManager";
+import { AudioPriority } from "@/types";
+import { cn } from "@/lib/cn";
 import type { LatLng } from "@/lib/geo";
 import type { MapFeatureReturn, MapLineFeature, PlaceSummary } from "@/types";
 
@@ -14,17 +17,51 @@ interface Props {
   currentLocation: LatLng | null;
   onLocate: () => void;
   realtimeFeatures?: MapFeatureReturn[];
+  tall?: boolean;
 }
 
 const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
 
-export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPlace, currentLocation, onLocate, realtimeFeatures, guidingLines = [] }: Props) {
+/** Ikon simbolis sesuai kategori tempat (fallback pin). */
+function placeIcon(category: string): string {
+  const c = category.toLowerCase();
+  if (/(pendidikan|school|education|universit|sekolah|kampus|sekolah tinggi|institute)/.test(c)) return "🎓";
+  if (/(masjid|muslim|mushola|musholla)/.test(c)) return "🕌";
+  if (/(kuliner|makan|restoran|food|restaurant|cafe|kopi|coffee|warung|kedai)/.test(c)) return "🍽️";
+  if (/(kesehatan|rumah sakit|klinik|health|hospital|clinic|pharma|apotek|puskesmas|dokter)/.test(c)) return "🏥";
+  if (/(ibada|worship|church|gereja|temple|kuil|pura|vihara|kathedral)/.test(c)) return "⛪";
+  if (/(transport|stasiun|station|terminal|bus|kereta|halte|angkot)/.test(c)) return "🚉";
+  if (/(rekreasi|taman|park|wisata|recreation|leisure|museum|taman kota)/.test(c)) return "🌳";
+  if (/(belanja|mall|shopping|retail|pasar|supermarket|minimarket|toko)/.test(c)) return "🛒";
+  if (/(hotel|penginapan|lodging|guest|hostel|resort)/.test(c)) return "🏨";
+  if (/(bank|keuangan|finance|atm|kantor|office)/.test(c)) return "🏦";
+  if (/(pemerintah|government|kelurahan|camat|kotamadya|kecamatan)/.test(c)) return "🏛️";
+  if (/(olahraga|sport|gym|fitness|stadion|lapangan|kolam renang)/.test(c)) return "⚽";
+  return "📍";
+}
+
+/** Marker posisi terkini pengguna berbentuk orang (siluet berjalan). */
+function personMarkerSvg(color: string, size = 20): string {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1"/><path d="m9 20 3-6 3 6"/><path d="m6 8 6 2 6-2"/><path d="M12 10v4"/></svg>`;
+}
+
+export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPlace, currentLocation, onLocate, realtimeFeatures, guidingLines = [], tall = false }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<unknown>(null);
   const lineReadyRef = useRef(false);
+  const audio = useAudioManager();
   const [is3D, setIs3D] = useState(true);
   const [terrainOn, setTerrainOn] = useState(true);
   const [loaded, setLoaded] = useState(false);
+
+  /** Baca suara saat fitur / tempat diklik agar mudah diakses penyandang disabilitas. */
+  const speakSelection = useCallback(
+    (text: string) => {
+      audio.speak(text, AudioPriority.UserRequestedInformation);
+      announceLiveRegion(text);
+    },
+    [audio],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -94,7 +131,13 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
         el.style.background = f.tone === "success" ? "var(--color-success)" : f.tone === "warning" ? "var(--color-warning)" : f.tone === "danger" ? "var(--color-danger)" : "#64748b";
         el.textContent = f.symbol || "•";
         el.style.color = "white";
-        el.onclick = () => onSelectPlace(f.placeId ?? null);
+        el.onclick = () => {
+          const parts = [f.label];
+          if (f.statusLabel && f.statusLabel !== f.label) parts.push(f.statusLabel);
+          if (f.placeName) parts.push(`di ${f.placeName}`);
+          speakSelection(`${parts.join(". ")}.`);
+          onSelectPlace(f.placeId ?? null);
+        };
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const MarkerCtor = (maplibregl as any).Marker;
         const marker = new MarkerCtor({ element: el }).setLngLat([f.lng, f.lat]).addTo(mapRef.current);
@@ -108,17 +151,26 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
         el.style.cssText = `width:${isSelected ? 36 : 30}px;height:${isSelected ? 36 : 30}px;border-radius:9999px;border:3px solid ${isSelected ? "black" : "white"};display:flex;align-items:center;justify-content:center;font-weight:900;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.3);`;
         el.style.background = "var(--color-primary)";
         el.style.color = "white";
-        el.textContent = "📍";
-        el.onclick = () => onSelectPlace(p.id);
+        el.textContent = placeIcon(p.category);
+        el.onclick = () => {
+          const parts = [p.name, p.category];
+          if (p.distanceLabel) parts.push(p.distanceLabel);
+          speakSelection(`${parts.join(". ")}.`);
+          onSelectPlace(p.id);
+        };
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const MarkerCtor2 = (maplibregl as any).Marker;
         const marker = new MarkerCtor2({ element: el }).setLngLat([p.lng, p.lat]).addTo(mapRef.current);
         markers.push(marker);
       }
       if (currentLocation) {
-        const el = document.createElement("div");
+        const el = document.createElement("button");
+        el.setAttribute("type", "button");
         el.setAttribute("aria-label", "Lokasi saya saat ini");
-        el.style.cssText = "width:18px;height:18px;border-radius:9999px;background:#15803d;border:3px solid white;box-shadow:0 0 0 6px rgba(21,128,61,.25)";
+        el.style.cssText =
+          "width:34px;height:34px;border-radius:9999px;background:#ffffff;border:3px solid var(--color-primary);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 6px rgba(37,99,235,.22),0 2px 12px rgba(0,0,0,.4);cursor:pointer;";
+        el.innerHTML = personMarkerSvg("var(--color-primary)");
+        el.onclick = () => speakSelection("Lokasi saya saat ini.");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const MarkerCtor3 = (maplibregl as any).Marker;
         const marker = new MarkerCtor3({ element: el }).setLngLat([currentLocation.lng, currentLocation.lat]).addTo(mapRef.current);
@@ -126,7 +178,7 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
       }
     })();
     return () => { markers.forEach((mm) => { try { mm.remove(); } catch {} }); };
-  }, [places, features, realtimeFeatures, selectedPlaceId, currentLocation, loaded, onSelectPlace]);
+  }, [places, features, realtimeFeatures, selectedPlaceId, currentLocation, loaded, onSelectPlace, speakSelection]);
 
   // Lapisan garis pemandu (guiding block / tactile paving) — kuning.
   useEffect(() => {
@@ -176,16 +228,16 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
   }, [loaded, guidingLines]);
 
   return (
-    <div className="relative overflow-hidden rounded-16 border-2 border-border bg-card shadow-card">
+    <div className={cn("relative overflow-hidden", tall ? "h-full w-full" : "rounded-16 border-2 border-border bg-card shadow-card")}>
       <div
         ref={containerRef}
         role="application"
         aria-label="Peta 3D interaktif gratis. Geser, cubit zoom, putar 2 jari untuk 3D. Bagi tunanetra, gunakan daftar tempat di bawah peta sebagai alternatif utama."
-        className="h-[420px] w-full sm:h-[560px]"
+        className={tall ? "h-full w-full" : "h-[420px] w-full sm:h-[560px]"}
         style={{ background: "#e5e7eb" }}
       />
       {!loaded ? <div className="absolute inset-0 grid place-items-center bg-muted/60 text-sm text-muted-foreground">Memuat peta 3D gratis…</div> : null}
-      <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+      <div className="absolute bottom-3 left-3 hidden flex-wrap gap-2 md:flex">
         <button type="button" onClick={() => setIs3D((v) => !v)} aria-pressed={is3D} aria-label={is3D ? "Matikan tampilan 3D" : "Aktifkan tampilan 3D"} className={`inline-flex h-11 items-center gap-2 rounded-12 border px-3 text-sm font-bold shadow-float ${is3D ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"}`}>
           <Box className="h-4 w-4" aria-hidden="true" /> {is3D ? "3D Aktif" : "2D"}
         </button>

@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { getAuthSecret } from "@/lib/auth/secret";
 import type { PublicUser } from "@/types";
 
 export const SESSION_COOKIE = "blindspot:session";
@@ -21,11 +22,12 @@ export interface SessionPayload {
 }
 
 function getAuthSecretOrThrow(): string {
-  const secret = process.env.AUTH_SECRET;
-  if (!secret) {
+  try {
+    return getAuthSecret();
+  } catch (error) {
+    console.error("[session] gagal memperoleh AUTH_SECRET:", error);
     throw new Error("AUTH_SECRET belum dikonfigurasi");
   }
-  return secret;
 }
 
 function signCore(core: string, secret: string): string {
@@ -47,8 +49,7 @@ export function createSessionToken(user: PublicUser): string {
 
 export function verifySessionToken(token: string): SessionPayload | null {
   try {
-    const secret = process.env.AUTH_SECRET;
-    if (!secret) return null;
+    const secret = getAuthSecret();
     const [core, signature] = token.split(".");
     if (!core || !signature) return null;
     const expected = createHmac("sha256", secret).update(core).digest("base64url");

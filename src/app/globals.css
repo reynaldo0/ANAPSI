@@ -1,27 +1,60 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ */
-/* BLINDSPOT — palet ramah disabilitas (WCAG AA)                       */
-/* - Kontras teks normal >= 4.5:1, teks besar >= 3:1                   */
-/* - Tema terang (default) + tema gelap (untuk fotofobia)              */
-/* - High-contrast / mode kontras tinggi di atas semuanya              */
-/* - Tidak ada gradien aneh; identitas visual via warna solid + ikon,  */
-/*   tidak hanya mengandalkan warna (buta warna tetap terbantu ikon)   */
+/* BLINDSPOT — NADI WebGIS design language                              */
+/* Palet mengikuti NADI (dark cinematic #0f0f0f, teal #0F4C5C/#16A3A3, */
+/* amber #E8A33D) dengan disiplin aksesibilitas WCAG AA: warna jenuh   */
+/* hanya untuk makna (tier/semantik) + selalu didampingi ikon/label.   */
+/* - Dark cinematic = identitas (default)                              */
+/* - Light mode = varian terang untuk fotofobia/lingkungan terang      */
+/* - High contrast = di atas semuanya                                  */
 /* ------------------------------------------------------------------ */
 :root {
-  --background: #ffffff;
-  --foreground: #111827;
-  --card: #ffffff;
-  --card-foreground: #111827;
+  /* NADI dark */
+  --background: #0f0f0f;
+  --foreground: #f9fafb;
+  --card: #171717;
+  --card-foreground: #f9fafb;
 
-  --primary: #1d4ed8;
-  --primary-hover: #1e40af;
-  --primary-soft: #dbeafe;
+  --primary: #16a3a3;
+  --primary-hover: #2fc2c2;
+  --primary-soft: #12343d;
+  --primary-foreground: #032624;
+
+  --accent: #e8a33d;
+  --accent-soft: #3a2d14;
+  --accent-foreground: #ffe9c7;
+
+  --success: #34d399;
+  --success-soft: #0b2f26;
+  --warning: #d3b745;
+  --warning-soft: #332a10;
+  --danger: #f87171;
+  --danger-soft: #3b1212;
+
+  --muted: #1f1f1f;
+  --muted-foreground: #a1a1aa;
+  --border: #262626;
+  --input: #3f3f46;
+  --ring: #16a3a3;
+
+  --grad-primary: linear-gradient(135deg, #16a3a3 0%, #0f4c5c 100%);
+}
+
+[data-theme="light"] {
+  --background: #fafaf9;
+  --foreground: #18181b;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+
+  --primary: #0f4c5c;
+  --primary-hover: #0d4150;
+  --primary-soft: #d9efee;
   --primary-foreground: #ffffff;
 
-  --accent: #0f766e;
-  --accent-soft: #ccfbf1;
-  --accent-foreground: #042f2e;
+  --accent: #b45309;
+  --accent-soft: #fdeeda;
+  --accent-foreground: #431407;
 
   --success: #15803d;
   --success-soft: #dcfce7;
@@ -30,54 +63,54 @@
   --danger: #b91c1c;
   --danger-soft: #fee2e2;
 
-  --muted: #f3f4f6;
-  --muted-foreground: #4b5563;
-  --border: #d1d5db;
-  --input: #9ca3af;
-  --ring: #1d4ed8;
+  --muted: #f1f5f9;
+  --muted-foreground: #52525b;
+  --border: #d4d4d8;
+  --input: #a1a1aa;
+  --ring: #0f4c5c;
 
-  /* Gradien dihilangkan — "grad-primary" solid mengikuti var(--primary) */
-  --grad-primary: linear-gradient(135deg, #1d4ed8 0%, #1d4ed8 100%);
+  --grad-primary: linear-gradient(135deg, #0f4c5c 0%, #0d4150 100%);
 }
 
 [data-theme="dark"] {
-  --background: #0b1220;
-  --foreground: #f3f4f6;
-  --card: #111a2b;
-  --card-foreground: #f3f4f6;
+  /* NADI dark — sama dengan default */
+  --background: #0f0f0f;
+  --foreground: #f9fafb;
+  --card: #171717;
+  --card-foreground: #f9fafb;
 
-  --primary: #3b82f6;
-  --primary-hover: #60a5fa;
-  --primary-soft: #1e293b;
-  --primary-foreground: #ffffff;
+  --primary: #16a3a3;
+  --primary-hover: #2fc2c2;
+  --primary-soft: #12343d;
+  --primary-foreground: #032624;
 
-  --accent: #2dd4bf;
-  --accent-soft: #0f2e2a;
-  --accent-foreground: #ccfbf1;
+  --accent: #e8a33d;
+  --accent-soft: #3a2d14;
+  --accent-foreground: #ffe9c7;
 
-  --success: #4ade80;
-  --success-soft: #052e16;
-  --warning: #fbbf24;
-  --warning-soft: #431407;
+  --success: #34d399;
+  --success-soft: #0b2f26;
+  --warning: #d3b745;
+  --warning-soft: #332a10;
   --danger: #f87171;
-  --danger-soft: #450a0a;
+  --danger-soft: #3b1212;
 
-  --muted: #1e293b;
-  --muted-foreground: #9ca3af;
-  --border: #334155;
-  --input: #475569;
-  --ring: #60a5fa;
+  --muted: #1f1f1f;
+  --muted-foreground: #a1a1aa;
+  --border: #262626;
+  --input: #3f3f46;
+  --ring: #16a3a3;
 
-  --grad-primary: linear-gradient(135deg, #3b82f6 0%, #3b82f6 100%);
+  --grad-primary: linear-gradient(135deg, #16a3a3 0%, #0f4c5c 100%);
 }
 
 [data-high-contrast="true"] {
-  --border: #4b5563;
-  --ring: #000000;
-}
-[data-high-contrast="true"][data-theme="dark"] {
-  --border: #e5e7eb;
+  --border: #f9fafb;
   --ring: #ffffff;
+}
+[data-high-contrast="true"][data-theme="light"] {
+  --border: #18181b;
+  --ring: #000000;
 }
 
 @theme inline {
@@ -115,11 +148,26 @@
   --animate-fade-in: fade-in 0.2s ease-out;
   --animate-slide-up: slide-up 0.25s ease-out;
   --animate-slide-down: slide-down 0.25s ease-out;
+  --animate-map-in: map-in 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-rise-in: rise-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-pulse-dot: pulse-dot 1.6s ease-in-out infinite;
 }
 
 @keyframes fade-in { from { opacity: 0 } to { opacity: 1 } }
 @keyframes slide-up { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0) } }
 @keyframes slide-down { from { opacity: 0; transform: translateY(-8px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes map-in {
+  0% { opacity: 0; transform: scale(0.94) translateY(14px); filter: blur(6px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+}
+@keyframes rise-in {
+  0% { opacity: 0; transform: translateY(18px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.35); opacity: 0.4; }
+}
 
 @layer base {
   *, ::before, ::after { border-color: var(--border); }
@@ -153,6 +201,13 @@
   background: var(--card);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-card);
+}
+
+/* Label khas NADI: uppercase + tracking jarang */
+.label-uppercase {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-weight: 700;
 }
 
 /* Label/ikon pendamping warna — buta warna tidak hanya bergantung warna */

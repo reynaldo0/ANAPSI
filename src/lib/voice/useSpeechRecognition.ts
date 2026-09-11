@@ -46,12 +46,23 @@ function createRecognition(): SpeechRecognitionLike | null {
   return rec;
 }
 
-export function useSpeechRecognition(voiceCopy: VoiceCopy = REPORT_VOICE_COPY) {
+export function useSpeechRecognition(
+  voiceCopy: VoiceCopy = REPORT_VOICE_COPY,
+  options: { autoRestart?: boolean } = {},
+) {
+  const { autoRestart = false } = options;
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const [supported] = useState(() => createRecognition() !== null);
   const [status, setStatus] = useState<MicStatus>("inactive");
   const [interim, setInterim] = useState("");
   const [finalTranscript, setFinalTranscript] = useState("");
+  const autoRestartRef = useRef(autoRestart);
+  const sessionStartedRef = useRef(false);
+  const silentEndRef = useRef(false);
+
+  useEffect(() => {
+    autoRestartRef.current = autoRestart;
+  }, [autoRestart]);
 
   useEffect(() => {
     return () => {
@@ -59,13 +70,96 @@ export function useSpeechRecognition(voiceCopy: VoiceCopy = REPORT_VOICE_COPY) {
     };
   }, []);
 
-  const stop = useCallback(() => {
-    const rec = recRef.current;
-    if (rec) {
-      rec.stop();
-      setStatus("processing");
-    }
-  }, []);
+  const bindRef = useRef<(rec: SpeechRecognitionLike) => void>(() => {});
+  const bind = useCallback(
+    (rec: SpeechRecognitionLike) => {
+      rec.lang = "id-ID";
+      rec.continuous = true;
+      rec.interimResults = true;
+
+      rec.onstart = () => {
+        // Mode suara langsung: hanya umumkan sekali saat sesi dimulai, lalu diam-diam.
+        if (autoRestartRef.current && sessionStartedRef.current) {
+          setStatus("listening");
+          return;
+        }
+        sessionStartedRef.current = true;
+        setStatus("listening");
+        announceLiveRegion(voiceCopy.listening);
+      };
+
+      rec.onend = () => {
+        if (silentEndRef.current) {
+          silentEndRef.current = false;
+          setStatus("inactive");
+          return;
+        }
+        if (autoRestartRef.current) {
+          // Tetap mendengarkan: buat sesi baru tanpa mengumumkan ulang.
+          const next = createRecognition();
+          if (!next) {
+            setStatus("inactive");
+            sessionStartedRef.current = false;
+            return;
+          }
+          recRef.current = next;
+          bindRef.current(next);
+          setStatus("listening");
+          try {
+            next.start();
+          } catch {
+            setStatus("inactive");
+            sessionStartedRef.current = false;
+          }
+          return;
+        }
+        announceLiveRegion(voiceCopy.ended);
+        setStatus("inactive");
+        sessionStartedRef.current = false;
+      };
+
+      rec.onerror = (event) => {
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+          autoRestartRef.current = false;
+          sessionStartedRef.current = false;
+          setStatus("inactive");
+          announceLiveRegion(voiceCopy.denied, { assertive: true });
+          return;
+        }
+        if (event.error === "no-speech") {
+          // Dalam mode suara langsung, diam saja dan terus menyimak.
+          if (!autoRestartRef.current) {
+            setStatus("inactive");
+            sessionStartedRef.current = false;
+            announceLiveRegion(voiceCopy.noSpeech, { assertive: true });
+          }
+          return;
+        }
+        if (!autoRestartRef.current) setStatus("inactive");
+      };
+
+      rec.onresult = (event) => {
+        let interimText = "";
+        let finalText = "";
+        for (let i = 0; i < event.results.length; i += 1) {
+          const result = event.results[i];
+          const chunk = result[0]?.transcript ?? "";
+          if (result.isFinal) finalText += chunk;
+          else interimText += chunk;
+        }
+        if (interimText) {
+          setInterim(interimText);
+          announceLiveRegion(voiceCopy.interim(interimText));
+        }
+        if (finalText) setFinalTranscript((prev) => (prev ? `${prev} ${finalText}` : finalText));
+      };
+    },
+    [voiceCopy],
+  );
+
+  useEffect(() => {
+    bindRef.current = bind;
+  }, [bind]);
 
   const start = useCallback(() => {
     if (!supported) return;
@@ -74,45 +168,40 @@ export function useSpeechRecognition(voiceCopy: VoiceCopy = REPORT_VOICE_COPY) {
     const rec = createRecognition();
     if (!rec) return;
     recRef.current = rec;
-    rec.lang = "id-ID";
-    rec.continuous = true;
-    rec.interimResults = true;
-
-    rec.onstart = () => {
-      setStatus("listening");
-      announceLiveRegion(voiceCopy.listening);
-    };
-    rec.onend = () => {
-      announceLiveRegion(voiceCopy.ended);
+    bind(rec);
+    try {
+      rec.start();
+    } catch {
       setStatus("inactive");
-    };
-    rec.onerror = (event) => {
-      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-        announceLiveRegion(voiceCopy.denied, { assertive: true });
-      } else if (event.error === "no-speech") {
-        announceLiveRegion(voiceCopy.noSpeech, { assertive: true });
-      }
-      setStatus("inactive");
-    };
-    rec.onresult = (event) => {
-      let interimText = "";
-      let finalText = "";
-      for (let i = 0; i < event.results.length; i += 1) {
-        const result = event.results[i];
-        const chunk = result[0]?.transcript ?? "";
-        if (result.isFinal) finalText += chunk;
-        else interimText += chunk;
-      }
-      if (interimText) {
-        setInterim(interimText);
-        announceLiveRegion(voiceCopy.interim(interimText));
-      }
-      if (finalText) setFinalTranscript((prev) => (prev ? `${prev} ${finalText}` : finalText));
-    };
+    }
+  }, [supported, bind]);
 
-    announceLiveRegion(voiceCopy.listening);
-    rec.start();
-  }, [supported, voiceCopy]);
+  const stop = useCallback(() => {
+    const rec = recRef.current;
+    if (rec) {
+      try {
+        rec.stop();
+      } catch {
+        // ignore
+      }
+      setStatus("processing");
+    }
+  }, []);
 
-  return { supported, status, interim, finalTranscript, start, stop };
+  /** Jeda mikrofon tanpa mematikan sesi (mis. saat web membalas dengan suara agar tidak menangkap gema sendiri). */
+  const suspend = useCallback(() => {
+    silentEndRef.current = true;
+    const rec = recRef.current;
+    if (rec) {
+      try {
+        rec.stop();
+      } catch {
+        // ignore
+      }
+    }
+    setStatus("inactive");
+    setInterim("");
+  }, []);
+
+  return { supported, status, interim, finalTranscript, start, stop, suspend };
 }

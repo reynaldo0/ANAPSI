@@ -4,7 +4,7 @@ import {
   clientIp,
   rateLimitKey,
 } from "@/lib/api/rate-limit";
-import { fail, ok } from "@/lib/api/response";
+import { ok } from "@/lib/api/response";
 import {
   asString,
   buildErrors,
@@ -18,7 +18,7 @@ import {
   SESSION_COOKIE,
   SESSION_COOKIE_OPTIONS,
 } from "@/lib/auth/session";
-import { requireDatabase } from "@/lib/db";
+import { findLoginUser } from "@/lib/users";
 
 interface LoginBody {
   email?: unknown;
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
   try {
     const limit = checkRateLimit(rateLimitKey(clientIp(request), "login"), 5, 60_000);
     if (!limit.allowed) {
-      return fail("Terlalu banyak percobaan. Coba lagi nanti.", "RATE_LIMITED", 429);
+      throw new ApiError(429, "RATE_LIMITED", "Terlalu banyak percobaan. Coba lagi nanti.");
     }
 
     let body: LoginBody;
@@ -54,23 +54,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const db = requireDatabase();
-    const user = await db.user.findUnique({
-      where: { email },
-      select: { id: true, email: true, displayName: true, role: true, passwordHash: true },
-    });
-
-    const valid = user !== null && (await verifyPassword(password, user.passwordHash));
-    if (!user || !valid) {
+    const found = await findLoginUser(email);
+    const valid = found !== null && (await verifyPassword(password, found.passwordHash));
+    if (!found || !valid) {
       throw new ApiError(401, "INVALID_CREDENTIALS", "Email atau kata sandi salah.");
     }
-
-    const publicUser = {
-      id: user.id,
-      email: user.email,
-      displayName: user.displayName,
-      role: user.role,
-    };
+    const publicUser = found.user;
 
     let token: string;
     try {

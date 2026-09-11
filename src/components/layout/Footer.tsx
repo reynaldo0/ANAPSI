@@ -1,7 +1,11 @@
+"use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { APP_NAME, APP_TAGLINE } from "@/lib/constants";
 
 export function AppFooter() {
+  const pathname = usePathname();
+  if (pathname === "/map") return null;
   return (
     <footer className="border-t-2 border-border bg-card">
       <div className="mx-auto w-full max-w-6xl px-4 py-8">

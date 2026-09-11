@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BADGES } from "@/lib/data/gamification";
+import { BADGES } from "@/lib/gamification-defs";
 import { useGamification } from "@/lib/state/GamificationContext";
 import { cn } from "@/lib/cn";
 

@@ -7,6 +7,7 @@ import { getCurrentUser } from "@/lib/auth/current-user";
 import { reportCategoryLabel } from "@/lib/constants";
 import { awardReportPoints } from "@/lib/data/gamification";
 import { createReport, isReportCategory, listReports } from "@/lib/data/reports";
+import { reporterKey } from "@/lib/reporter-key";
 import type { AccessibilityProfileType, AffectedProfile, Severity, SubmitReportInput } from "@/types";
 
 const PROFILES: readonly AccessibilityProfileType[] = ["VISUAL_NAVIGATION", "WHEELCHAIR_MOBILITY"];
@@ -96,6 +97,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const declaredReporterId =
+      typeof body.reporterId === "string" && body.reporterId ? body.reporterId : null;
+
+    const resolvedReporterKey = reporterKey(ip, session);
+
     const input: SubmitReportInput = {
       category: body.category,
       description,
@@ -107,16 +113,23 @@ export async function POST(request: NextRequest) {
       longitude: typeof body.longitude === "number" && Number.isFinite(body.longitude) ? body.longitude : null,
       media,
       aiSuggested,
-      reporterId: typeof body.reporterId === "string" && body.reporterId ? body.reporterId : null,
+      // Kunci pelapor DITERBITKAN SERVER (sesi atau hash IP) — nilai dari klien
+      // tidak dipercaya untuk atribusi/laporan, sehingga tak bisa dispoof.
+      reporterId: resolvedReporterKey,
       reporterName: typeof body.reporterName === "string" && body.reporterName ? body.reporterName : null,
     };
 
     const { data, source } = await createReport(input, session);
     const gamification = awardReportPoints(
-      input.reporterId ?? `anon-${ip}`,
+      resolvedReporterKey,
       input.reporterName ?? null,
       { category: input.category, severity: input.severity, hasPhoto: media.length > 0 },
     );
+    if (declaredReporterId) {
+      // Kembalikan snapshot ke identitas lokal perangkat agar lencana
+      // tetap melekat di perangkat pengguna.
+      gamification.reporterId = declaredReporterId;
+    }
     return ok(
       { report: { ...data, categoryLabel: reportCategoryLabel(data.category) }, source, gamification },
       { status: 201 },

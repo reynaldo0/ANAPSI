@@ -23,7 +23,7 @@ interface PlacesResponse {
 
 interface RoutesResponse {
   ok: boolean;
-  data: { routes: RouteOption[] };
+  data: { routes: RouteOption[]; real?: boolean };
   error?: { code: string; message: string };
 }
 
@@ -46,6 +46,7 @@ export function RoutePlanner() {
   const [loadingPlaces, setLoadingPlaces] = useState(true);
   const [searching, setSearching] = useState(false);
   const [routes, setRoutes] = useState<RouteOption[] | null>(null);
+  const [realStreet, setRealStreet] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const suggestRef = useRef<HTMLUListElement>(null);
 
@@ -147,6 +148,7 @@ export function RoutePlanner() {
         return;
       }
       setRoutes(body.data.routes);
+      setRealStreet(body.data.real === true);
       announceLiveRegion(`${body.data.routes.length} pilihan rute ditemukan. Rute paling aksesibel direkomendasikan.`, {
         assertive: true,
       });
@@ -322,6 +324,11 @@ export function RoutePlanner() {
           <section aria-label="Pilihan rute" className="space-y-4">
             <p className="sr-only" aria-live="polite">
               Pilihan rute siap.
+            </p>
+            <p className="rounded-12 border-2 border-border bg-card px-4 py-2.5 text-sm text-muted-foreground shadow-card">
+              {realStreet
+                ? "Rute mengikuti jaringan jalan nyata (OpenStreetMap) dan disesuaikan dengan hambatan yang dianalisis."
+                : "Rute memperkirakan jaringan jalan dari data demo. Jalur mengikuti jalan nyata dengan lebih presisi saat data navigasi jalan tersedia."}
             </p>
             {routes.map((route) => (
               <RouteResultCard key={route.id} route={route} />

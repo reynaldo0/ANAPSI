@@ -41,7 +41,7 @@ const VOICE_COPY: VoiceCopy = {
 
 interface RoutesResponse {
   ok: boolean;
-  data: { routes: RouteOption[] };
+  data: { routes: RouteOption[]; real?: boolean };
   error?: { code: string; message: string };
 }
 
@@ -65,6 +65,7 @@ export function JourneyController() {
   const lngParam = searchParams.get("lng");
 
   const [routes, setRoutes] = useState<RouteOption[] | null>(null);
+  const [realStreet, setRealStreet] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(routeParam);
   const [screen, setScreen] = useState<"brief" | "nav">("brief");
   const [stepIndex, setStepIndex] = useState(0);
@@ -108,6 +109,7 @@ export function JourneyController() {
         }
         if (!cancelled) {
           setRoutes(body.data.routes);
+          setRealStreet(body.data.real === true);
           const wanted = body.data.routes.find((r) => r.id === routeParam);
           setSelectedId(wanted?.id ?? body.data.routes[0].id);
         }
@@ -323,6 +325,9 @@ export function JourneyController() {
             <Badge tone={isVisual ? "neutral" : "success"} symbol={isVisual ? "👁️" : "♿"}>
               {isVisual ? "Navigasi audio" : "Navigasi kursi roda"}
             </Badge>
+            <Badge tone={realStreet ? "success" : "neutral"} symbol={realStreet ? "🛣" : "◇"}>
+              {realStreet ? "Rute mengikuti jalan nyata" : "Rute estimasi demo"}
+            </Badge>
           </div>
 
           <div>
@@ -340,6 +345,8 @@ export function JourneyController() {
               route={selected}
               stepIndex={stepIndex}
               onStepReached={handleAutoStep}
+              onNext={nextStep}
+              onPrev={prevStep}
             />
             <p className="px-1 text-xs text-muted-foreground">
               Peta 3D langsung memandumu bergerak realtime. Titik biru berdenyut = posisimu · garis biru = rute ·

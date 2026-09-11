@@ -36,7 +36,7 @@ interface Stroke {
   verification: string;
 }
 
-function metersBetween(a: LatLng, b: LatLng): number {
+export function metersBetween(a: LatLng, b: LatLng): number {
   return haversineKm(a, b) * 1000;
 }
 
@@ -65,7 +65,7 @@ function subdivide(a: LatLng, b: LatLng, maxLegM: number): LatLng[] {
   return points;
 }
 
-function corridorHits(points: LatLng[], kinds: LayerKind[]): CorridorHit[] {
+export function corridorHits(points: LatLng[], kinds: LayerKind[]): CorridorHit[] {
   const hits: CorridorHit[] = [];
   let cum = 0;
   const lengths: number[] = [];
@@ -92,7 +92,7 @@ function corridorHits(points: LatLng[], kinds: LayerKind[]): CorridorHit[] {
   return hits;
 }
 
-function evaluateRoute(
+export function evaluateRoute(
   route: RouteLike,
   destination: DemoPlace,
   profile: AccessibilityProfileType,
@@ -173,7 +173,7 @@ function evaluateRoute(
   return { score, strokes, facilitiesOf: facilities, barriersOf: barriers };
 }
 
-function buildSteps(
+export function buildSteps(
   pivots: LatLng[],
   destinationName: string,
 ): RouteStepInfo[] {
@@ -199,7 +199,7 @@ function buildSteps(
   return steps;
 }
 
-function withWarnings(steps: RouteStepInfo[], barriers: RouteBarrierInfo[], facilities: RouteFacilityInfo[]): RouteStepInfo[] {
+export function withWarnings(steps: RouteStepInfo[], barriers: RouteBarrierInfo[], facilities: RouteFacilityInfo[]): RouteStepInfo[] {
   let untilNow = 0;
   return steps.map((step) => {
     const from = untilNow - 20;
@@ -356,7 +356,7 @@ function toOption(input: {
   };
 }
 
-function sumPath(points: LatLng[]): number {
+export function sumPath(points: LatLng[]): number {
   let total = 0;
   for (let i = 0; i < points.length - 1; i += 1) total += metersBetween(points[i], points[i + 1]);
   return total;

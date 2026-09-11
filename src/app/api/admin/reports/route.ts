@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { ApiError, handleApiError, forbidden } from "@/lib/api/errors";
+import { checkRateLimit, clientIp, rateLimitKey } from "@/lib/api/rate-limit";
 import { ok } from "@/lib/api/response";
 import { requireAuth } from "@/lib/auth/require-session";
 import { listReportsAdmin, updateReport } from "@/lib/data/reports";
@@ -39,6 +40,10 @@ export async function PUT(request: NextRequest) {
     const session = await requireAuth();
     if (session.role !== "ADMIN") {
       throw forbidden("Hanya admin yang dapat mengubah status laporan.");
+    }
+    const limit = checkRateLimit(rateLimitKey(clientIp(request), "admin:update"), 30, 60_000);
+    if (!limit.allowed) {
+      throw new ApiError(429, "RATE_LIMITED", `Terlalu banyak permintaan. Coba lagi dalam ${limit.retryAfterSeconds} detik.`);
     }
 
     let body: { id?: unknown; status?: unknown; moderationNotes?: unknown };
