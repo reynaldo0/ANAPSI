@@ -74,7 +74,25 @@ export function RoutePlanner() {
 
   const presetPlace = useMemo(() => {
     if (!presetTo) return null;
-    return places.find((p) => p.name === presetTo) ?? null;
+    const raw = presetTo.trim().toLowerCase();
+    if (!raw) return null;
+    const haystack = (p: PlaceSummary) => `${p.name} ${p.address} ${p.city}`.toLowerCase();
+    if (raw) {
+      const exact = places.find((p) => haystack(p) === raw || p.name.toLowerCase() === raw);
+      if (exact) return exact;
+      const contains = places.find((p) => haystack(p).includes(raw));
+      if (contains) return contains;
+    }
+    const tokens = raw.split(/\s+/).filter(Boolean);
+    if (tokens.length > 0) {
+      const allTokens = places.filter((p) => tokens.every((t) => haystack(p).includes(t)));
+      if (allTokens.length === 1) return allTokens[0];
+      if (allTokens.length > 1) {
+        return allTokens.find((p) => p.name.toLowerCase().includes(tokens[0])) ?? allTokens[0];
+      }
+      return places.find((p) => tokens.some((t) => p.name.toLowerCase().includes(t))) ?? null;
+    }
+    return null;
   }, [places, presetTo]);
 
   const effectiveDestination = destination ?? presetPlace;

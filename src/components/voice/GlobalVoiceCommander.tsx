@@ -29,6 +29,10 @@ function parseIntent(text: string): { action: string; arg?: string } | null {
 const HANDS_FREE_PAGES = new Set(["/", "/map"]);
 
 function readDefaultHandsFree(): boolean {
+  return false;
+}
+
+function loadStoredHandsFree(): boolean {
   if (typeof window === "undefined") return false;
   try {
     const stored = localStorage.getItem(STORAGE_KEYS.handsFree);
@@ -67,6 +71,10 @@ export function GlobalVoiceCommander() {
   const [lastHeard, setLastHeard] = useState("");
   const handledRef = useRef(0);
   const processTranscriptRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    setHandsFreeState(loadStoredHandsFree());
+  }, []);
 
   const isHandsFreePage = HANDS_FREE_PAGES.has(pathname);
   const audioBusy = audio.status === "speaking" || audio.status === "paused";

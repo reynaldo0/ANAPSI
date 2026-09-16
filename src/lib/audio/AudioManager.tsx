@@ -43,10 +43,14 @@ function readStoredEnabled(): boolean {
 }
 
 export function AudioProvider({ children }: { children: ReactNode }) {
-  const [supported] = useState(() => getSpeechSynthesis() !== null);
+  const [supported, setSupported] = useState(false);
   const [enabled, setEnabledState] = useState(readStoredEnabled);
   const [status, setStatus] = useState<AudioStatus>("idle");
   const [currentText, setCurrentText] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSupported(getSpeechSynthesis() !== null);
+  }, []);
 
   const queueRef = useRef<AudioRequest[]>([]);
   const currentRef = useRef<AudioRequest | null>(null);
