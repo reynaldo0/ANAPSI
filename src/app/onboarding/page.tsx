@@ -42,7 +42,7 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (step !== 0 || !audio.supported) return;
     const greeting =
-      "Halo, selamat datang di BLINDSPOT. Kamu siapa? Pilih tunanetra untuk panduan suara lengkap, tunadaksa untuk rute kursi roda, atau tanpa disabilitas untuk pengalaman standar. Gunakan tombol Lanjut setelah memilih.";
+      "Halo, selamat datang di ANAPSI. Kamu siapa? Pilih tunanetra untuk panduan suara lengkap, tunadaksa untuk rute kursi roda, atau tanpa disabilitas untuk pengalaman standar. Gunakan tombol Lanjut setelah memilih.";
     const t = setTimeout(() => {
       audio.speak(greeting, AudioPriority.UserRequestedInformation);
       announceLiveRegion(greeting, { assertive: true });
@@ -107,7 +107,7 @@ export default function OnboardingPage() {
             Kamu <span className="text-grad">siapa</span>?
           </h1>
           <p className="mt-2 text-base leading-relaxed text-muted-foreground">
-            Pilih satu — BLINDSPOT mengubah cara bicara, rute, dan besarnya tombol
+            Pilih satu — ANAPSI mengubah cara bicara, rute, dan besarnya tombol
             <strong> khusus untukmu</strong>. Kamu tidak wajib masuk; semua bisa dipakai anonim.
           </p>
           <div className="mt-6">

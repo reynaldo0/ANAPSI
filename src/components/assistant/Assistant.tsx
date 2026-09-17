@@ -148,7 +148,7 @@ export function Assistant() {
               Tanya Asisten
             </h1>
             <p className="mt-1 text-muted-foreground">
-              Jawaban berasal dari data BLINDSPOT dan tidak mengarang kondisi aksesibilitas. Contoh pertanyaan:{" "}
+              Jawaban berasal dari data ANAPSI dan tidak mengarang kondisi aksesibilitas. Contoh pertanyaan:{" "}
               <em>&quot;Apakah tempat ini aksesibel untuk kursi roda?&quot;</em>
             </p>
           </div>

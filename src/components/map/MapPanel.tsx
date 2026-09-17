@@ -2,11 +2,11 @@
 
 import { useCallback, useRef, useState, type PointerEvent, type WheelEvent } from "react";
 import { Crosshair, Minus, Plus } from "lucide-react";
-import type { LatLng } from "@/lib/geo";
+import { type LatLng, FOCUS_CENTER } from "@/lib/geo";
 import { verificationLabel } from "@/lib/verification";
 import type { MapFeatureReturn, PlaceSummary } from "@/types";
 
-export const MAP_ORIGIN: LatLng = { lat: -6.2003, lng: 106.877 };
+export const MAP_ORIGIN: LatLng = FOCUS_CENTER;
 const DEFAULT_PX_PER_KM = 260;
 const MIN_PX_PER_KM = 40;
 const MAX_PX_PER_KM = 2200;
@@ -147,7 +147,7 @@ export function MapPanel({
     <div className="relative overflow-hidden rounded-16 border border-border bg-card shadow-card">
       <svg
         role="img"
-        aria-label={`Peta interaktif area ${currentLocationLabel ? "di sekitar lokasimu" : "Rawamangun"}. Gunakan tombol Lokasi Saya untuk memusatkan, atau buka tampilan daftar untuk penjelasan teks lengkap.`}
+        aria-label={`Peta interaktif area ${currentLocationLabel ? "di sekitar lokasimu" : "Rawamangun, Jakarta Timur"}. Gunakan tombol Lokasi Saya untuk memusatkan, atau buka tampilan daftar untuk penjelasan teks lengkap.`}
         viewBox="0 0 800 600"
         className="h-[420px] w-full touch-none select-none bg-muted/40 sm:h-[560px]"
         onWheel={handleWheel}
@@ -298,7 +298,7 @@ export function MapPanel({
       </div>
 
       <p className="sr-only" role="status">
-        {currentLocationLabel ? `Lokasi saat ini: ${currentLocationLabel}` : "Lokasi otomatis belum tersedia. Posisi peta: area Rawamangun."}
+        {currentLocationLabel ? `Lokasi saat ini: ${currentLocationLabel}` : "Lokasi otomatis belum tersedia. Posisi peta: Rawamangun, Jakarta Timur."}
       </p>
     </div>
   );

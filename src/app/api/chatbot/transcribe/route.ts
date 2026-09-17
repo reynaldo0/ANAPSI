@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     const rl = checkRateLimit(rateLimitKey(ip, "chatbot-stt"), 10, 60_000);
     if (!rl.allowed) throw new ApiError(429, "RATE_LIMITED", "Terlalu sering transcribe");
     const groqKey = process.env.GROQ_API_KEY;
-    if (!groqKey) throw new ApiError(503, "STT_UNAVAILABLE", "Groq belum dikonfigurasi. Gunakan dikte browser sebagai fallback.");
+    if (!groqKey) throw new ApiError(503, "STT_UNAVAILABLE", "Transkripsi otomatis belum dikonfigurasi. Gunakan dikte browser sebagai fallback.");
 
     const form = await req.formData();
     const file = form.get("audio") as File | null;

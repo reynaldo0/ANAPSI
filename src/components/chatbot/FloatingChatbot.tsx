@@ -32,7 +32,7 @@ export function FloatingChatbot() {
       setMsgs((m) => [...m, { role: "assistant", content: reply }]);
       audio.speak(reply, AudioPriority.UserRequestedInformation);
       try { if ("vibrate" in navigator) navigator.vibrate(40); } catch {}
-    } catch { setMsgs((m) => [...m, { role: "assistant", content: "Gagal menghubungi Groq. Coba lagi." }]); } finally { setLoading(false); }
+    } catch { setMsgs((m) => [...m, { role: "assistant", content: "Gagal menghubungi asisten. Coba lagi." }]); } finally { setLoading(false); }
   };
 
   return (
@@ -41,7 +41,7 @@ export function FloatingChatbot() {
         type="button"
         data-tour="chatbot"
         onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Tutup chatbot tunanetra" : "Buka chatbot tunanetra Groq — teman ngobrol suara"}
+        aria-label={open ? "Tutup chatbot tunanetra" : "Buka chatbot tunanetra — teman ngobrol suara"}
         aria-expanded={open}
         aria-haspopup="dialog"
         className="fixed bottom-20 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full border-2 border-primary bg-primary text-primary-foreground shadow-float hover:bg-primary-hover focus-visible:outline-offset-2 md:bottom-6"
@@ -52,7 +52,7 @@ export function FloatingChatbot() {
         <div
           ref={panelRef}
           role="dialog"
-          aria-label="Chatbot tunanetra Groq mengambang"
+          aria-label="Chatbot tunanetra mengambang"
           aria-modal="false"
           className="fixed bottom-36 right-4 z-50 flex h-[420px] w-[92vw] max-w-[360px] flex-col overflow-hidden rounded-16 border-2 border-border bg-card shadow-float md:bottom-6"
         >

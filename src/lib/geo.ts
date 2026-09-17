@@ -34,3 +34,30 @@ export function distanceFrom(origin: LatLng | null, target: LatLng): DistanceInf
   const km = haversineKm(origin, target);
   return { km, label: formatDistance(km) };
 }
+
+/**
+ * Fokus ANAPSI: area uji coba Rawamangun — Velodrome, Kecamatan Pulo Gadung, Jakarta Timur.
+ * Semua data demo berada dalam radius ~1,5 km dari pusat ini.
+ */
+export const FOCUS_REGION_LABEL = "Rawamangun, Jakarta Timur";
+export const FOCUS_CENTER: LatLng = { lat: -6.196, lng: 106.879 };
+export const FOCUS_RADIUS_KM = 3.5;
+
+function within(point: LatLng, center: LatLng, radiusKm: number): boolean {
+  return haversineKm(point, center) <= radiusKm;
+}
+
+/**
+ * Kembalikan titik asal yang selalu berada di dalam area fokus.
+ * Jika titik asal (GPS) berada di luar area fokus, dipakai pusat Rawamangun agar
+ * hasil pencarian tetap terisi dan analisis langsung tersedia. True focus: Jakarta Timur.
+ */
+export function focusOrigin(origin: LatLng | null): LatLng {
+  if (origin && within(origin, FOCUS_CENTER, FOCUS_RADIUS_KM)) return origin;
+  return FOCUS_CENTER;
+}
+
+export function isOutsideFocus(origin: LatLng | null): boolean {
+  if (!origin) return true;
+  return !within(origin, FOCUS_CENTER, FOCUS_RADIUS_KM);
+}

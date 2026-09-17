@@ -52,7 +52,7 @@ async function ensureUsers(): Promise<MockUserRow[]> {
     {
       id: "u-admin-demo",
       email: DEMO_CREDENTIALS.adminEmail,
-      displayName: "Admin BLINDSPOT",
+      displayName: "Admin ANAPSI",
       passwordHash: adminHash,
       role: "ADMIN",
       createdAt: now,

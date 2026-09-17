@@ -1,5 +1,5 @@
 import { getDb } from "@/lib/db";
-import { haversineKm, distanceFrom, type LatLng } from "@/lib/geo";
+import { haversineKm, distanceFrom, focusOrigin, type LatLng } from "@/lib/geo";
 import { statusMeta, type LayerKind } from "@/lib/data/layers";
 import { demoPlaces, DEMO_SOURCE_LABEL } from "@/lib/data/demo-data";
 import { toSummary, demoPlacesFiltered, demoPlaceToDetail, formatEntrance, mockFeatures, type PlacesQuery, type DataResponse } from "@/lib/data/places-core";
@@ -10,7 +10,7 @@ export { summaryScore, formatEntrance, demoPlaceToDetail, getNearbyReports } fro
 
 export async function getPlaces(query: PlacesQuery): Promise<DataResponse<PlaceSummary[]>> {
   const db = getDb();
-  const origin = query.origin ?? null;
+  const origin = focusOrigin(query.origin ?? null);
 
   if (!db) {
     return { data: demoPlacesFiltered(query, origin).map((p) => toSummary(p, origin)), source: DEMO_SOURCE_LABEL };

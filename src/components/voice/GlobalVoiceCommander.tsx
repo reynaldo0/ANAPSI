@@ -6,6 +6,7 @@ import { useSpeechRecognition } from "@/lib/voice/useSpeechRecognition";
 import { useAudioManager } from "@/lib/audio/AudioManager";
 import { announceLiveRegion } from "@/lib/announcement";
 import { STORAGE_KEYS } from "@/lib/constants";
+import { useStoredValue } from "@/lib/state/useStoredValue";
 import { AudioPriority } from "@/types";
 
 function parseIntent(text: string): { action: string; arg?: string } | null {
@@ -27,10 +28,6 @@ function parseIntent(text: string): { action: string; arg?: string } | null {
 }
 
 const HANDS_FREE_PAGES = new Set(["/", "/map"]);
-
-function readDefaultHandsFree(): boolean {
-  return false;
-}
 
 function loadStoredHandsFree(): boolean {
   if (typeof window === "undefined") return false;
@@ -66,15 +63,13 @@ export function GlobalVoiceCommander() {
     noSpeech: "Tidak ada suara. Coba lagi.",
     interim: (s) => `Mendengar: ${s}`,
   });
-  const [handsFree, setHandsFreeState] = useState(readDefaultHandsFree);
+  const storedHandsFree = useStoredValue(loadStoredHandsFree, false);
+  const [handsFreeOverride, setHandsFreeOverride] = useState<boolean | null>(null);
+  const handsFree = handsFreeOverride ?? storedHandsFree;
   const [enabled, setEnabled] = useState(true);
   const [lastHeard, setLastHeard] = useState("");
   const handledRef = useRef(0);
   const processTranscriptRef = useRef<() => void>(() => {});
-
-  useEffect(() => {
-    setHandsFreeState(loadStoredHandsFree());
-  }, []);
 
   const isHandsFreePage = HANDS_FREE_PAGES.has(pathname);
   const audioBusy = audio.status === "speaking" || audio.status === "paused";
@@ -82,7 +77,7 @@ export function GlobalVoiceCommander() {
   const { start: startMic, suspend: suspendMic } = voice;
 
   const setHandsFree = useCallback((value: boolean) => {
-    setHandsFreeState(value);
+    setHandsFreeOverride(value);
     persistHandsFree(value);
   }, []);
 
@@ -241,13 +236,13 @@ export function GlobalVoiceCommander() {
       : "Tekan mic, ucapkan perintah";
 
   return (
-    <div role="region" aria-label="Komando suara global 2 arah" data-tour="voice" className="fixed bottom-2 left-2 z-40 flex items-center gap-2 rounded-full border-2 border-border bg-card px-2 py-1 shadow-float md:bottom-4">
+    <div role="region" aria-label="Komando suara global 2 arah" data-tour="voice" className={`fixed left-2 z-[80] flex items-center gap-2 rounded-full border-2 border-border bg-card px-2 py-1 shadow-float md:bottom-4 ${pathname === "/map" ? "bottom-32" : "bottom-24"}`}>
       <button
         type="button"
         onClick={toggleHandsFree}
         aria-pressed={handsFree}
         aria-label={handsFree ? "Matikan Mode Suara Langsung — mikrofon selalu menyala" : "Nyalakan Mode Suara Langsung — mikrofon selalu menyala tanpa perlu mematikan"}
-        className={`flex h-11 w-11 items-center justify-center rounded-full border-2 ${handsFree ? "animate-pulse border-danger bg-danger text-white" : "border-primary bg-primary text-primary-foreground"}`}
+        className={`flex h-11 w-11 items-center justify-center rounded-full border-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${handsFree ? "animate-pulse border-danger bg-danger text-white" : "border-primary bg-primary text-primary-foreground"}`}
       >
         <AudioLines className="h-5 w-5" aria-hidden="true" />
       </button>
@@ -257,7 +252,7 @@ export function GlobalVoiceCommander() {
           onClick={toggleManualMic}
           aria-pressed={voice.status === "listening"}
           aria-label={voice.status === "listening" ? "Hentikan komando suara global" : "Aktifkan komando suara global — bicara: Cari, Buka peta, Rute ke"}
-          className={`flex h-11 w-11 items-center justify-center rounded-full border-2 ${voice.status === "listening" ? "animate-pulse border-danger bg-danger text-white" : "border-primary bg-primary text-primary-foreground"}`}
+          className={`flex h-11 w-11 items-center justify-center rounded-full border-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${voice.status === "listening" ? "animate-pulse border-danger bg-danger text-white" : "border-primary bg-primary text-primary-foreground"}`}
         >
           {voice.status === "listening" ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
         </button>
@@ -266,7 +261,7 @@ export function GlobalVoiceCommander() {
         <span className="text-xs font-black leading-none">{handsFree ? "Suara Langsung" : "Suara 2 Arah"}</span>
         <span className="truncate text-[11px] text-muted-foreground" aria-live="polite">{statusLabel}</span>
       </div>
-      <button type="button" onClick={() => setEnabled((v) => !v)} aria-pressed={enabled} aria-label={enabled ? "Matikan suara balasan" : "Aktifkan suara balasan"} className={`flex h-9 w-9 items-center justify-center rounded-full border ${enabled ? "border-border bg-background" : "border-warning bg-warning-soft text-warning"}`}>
+      <button type="button" onClick={() => setEnabled((v) => !v)} aria-pressed={enabled} aria-label={enabled ? "Matikan suara balasan" : "Aktifkan suara balasan"} className={`flex h-9 w-9 items-center justify-center rounded-full border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${enabled ? "border-border bg-background" : "border-warning bg-warning-soft text-warning"}`}>
         {enabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
       </button>
     </div>

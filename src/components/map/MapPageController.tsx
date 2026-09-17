@@ -36,8 +36,9 @@ import { LAYERS, layersForProfile, type LayerKind } from "@/lib/data/layers";
 import { summaryScore } from "@/lib/data/places-core";
 import { useAccessibilityProfile } from "@/lib/state/ProfileContext";
 import { cn } from "@/lib/cn";
-import type { LatLng } from "@/lib/geo";
+import { FOCUS_CENTER, FOCUS_REGION_LABEL, isOutsideFocus, type LatLng } from "@/lib/geo";
 import type { MapFeatureReturn, MapLineFeature, PlaceSummary } from "@/types";
+import type { GeoSuggestion } from "@/app/api/geo/suggest/route";
 
 interface PlacesResponse {
   ok: boolean;
@@ -66,9 +67,9 @@ const DOT_FOR: Record<LayerKind, string> = {
 };
 
 /** Zona vertikal yang dipakai overlay atas agar tidak saling menindih. */
-const HERO_ROW_TOP = "top-[4.75rem]";
-const SIDE_PANEL_TOP = "top-[8.25rem]";
+const HERO_ROW_TOP = "top-32 sm:top-[4.75rem]";
 
+const SIDE_PANEL_TOP = "top-[8.25rem]";
 interface MenuItem {
   href: string;
   label: string;
@@ -77,7 +78,7 @@ interface MenuItem {
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { href: "/", label: "Beranda", hint: "Kembali ke beranda BLINDSPOT", Icon: Home },
+  { href: "/", label: "Beranda", hint: "Kembali ke beranda ANAPSI", Icon: Home },
   { href: "/report", label: "Lapor masalah", hint: "Laporkan hambatan aksesibilitas", Icon: Megaphone },
   { href: "/community", label: "Komunitas", hint: "Statistik dan diskusi komunitas", Icon: Users },
   { href: "/profile", label: "Profil saya", hint: "Akun, laporan, dan lencana", Icon: UserRound },
@@ -115,7 +116,6 @@ export function MapPageController() {
   const [activeLayer, setActiveLayer] = useState<"all" | LayerKind>("all");
   const [currentLocation, setCurrentLocation] = useState<LatLng | null>(null);
   const [currentLocationLabel, setCurrentLocationLabel] = useState<string | null>(null);
-  const [locating, setLocating] = useState(false);
   const [realtimeFeatures, setRealtimeFeatures] = useState<MapFeatureReturn[]>([]);
   const [realtimeLoading, setRealtimeLoading] = useState(false);
   const [guidingLines, setGuidingLines] = useState<MapLineFeature[]>([]);
@@ -127,6 +127,7 @@ export function MapPageController() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [destination, setDestination] = useState<PlaceSummary | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [focusedPoint, setFocusedPoint] = useState<{ lat: number; lng: number; name: string } | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const firstMenuItemRef = useRef<HTMLAnchorElement>(null);
 
@@ -236,7 +237,7 @@ export function MapPageController() {
   useEffect(() => {
     let cancelled = false;
     async function run() {
-      const center = currentLocation ?? { lat: -6.2003, lng: 106.877 };
+      const center = currentLocation ?? FOCUS_CENTER;
       setRealtimeLoading(true);
       try {
         const { fetchRealtimeAccessibility, fetchGuidingLines, bboxFromCenter } = await import("@/lib/realtimeOverpass");
@@ -259,6 +260,30 @@ export function MapPageController() {
     announceLiveRegion(q ? "Mencari lokasi." : "Memuat tempat terdekat.");
   }, []);
 
+  const suggest = useCallback(
+    async (q: string, asOfOrigin: LatLng | null) => {
+      const url = `/api/geo/suggest${toQuery({ q: q || undefined, lat: asOfOrigin?.lat, lng: asOfOrigin?.lng })}`;
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) throw new Error("Gagal memuat saran.");
+      const body = (await response.json()) as { ok: boolean; data: { suggestions: GeoSuggestion[] } };
+      return body.data;
+    },
+    [],
+  );
+
+  const pickSuggestion = useCallback((suggestion: GeoSuggestion) => {
+    setFocusedPoint({ lat: suggestion.lat, lng: suggestion.lng, name: suggestion.name });
+    if (suggestion.place) {
+      setSelectedPlaceId(suggestion.place.id);
+      announceLiveRegion(`${suggestion.name} dipilih di peta.`, { assertive: true });
+    } else {
+      announceLiveRegion(
+        `Lokasi ${suggestion.name} ditandai di peta. Gunakan "Mau ke mana?" untuk membuat rute.`,
+        { assertive: true },
+      );
+    }
+  }, []);
+
   // Pencarian dari luar halaman (komando suara "cari ..." saat sudah di peta).
   useEffect(() => {
     const handler = (event: Event) => {
@@ -278,17 +303,24 @@ export function MapPageController() {
       setLoadingPlaces(false);
       return;
     }
-    setLocating(true);
     setLoadingPlaces(true);
     setError(null);
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setCurrentLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
-        setCurrentLocationLabel(
-          `Lat ${position.coords.latitude.toFixed(4)}, Lng ${position.coords.longitude.toFixed(4)}`,
-        );
+        const raw = { lat: position.coords.latitude, lng: position.coords.longitude };
+        if (isOutsideFocus(raw)) {
+          announceLiveRegion(`Lokasimu di luar area fokus. Peta difokuskan ke ${FOCUS_REGION_LABEL}.`, {
+            assertive: true,
+          });
+          setCurrentLocation(FOCUS_CENTER);
+          setCurrentLocationLabel(`Area fokus ${FOCUS_REGION_LABEL}`);
+        } else {
+          setCurrentLocation(raw);
+          setCurrentLocationLabel(
+            `Lat ${position.coords.latitude.toFixed(4)}, Lng ${position.coords.longitude.toFixed(4)}`,
+          );
+        }
         announceLiveRegion("Lokasi ditemukan. Peta dipusatkan ke lokasimu.", { assertive: true });
-        setLocating(false);
         finishIntro();
       },
       () => {
@@ -296,7 +328,6 @@ export function MapPageController() {
           assertive: true,
         });
         setCurrentLocationLabel("Lokasi tidak tersedia — atur manual");
-        setLocating(false);
         setLoadingPlaces(false);
         finishIntro(true);
       },
@@ -314,7 +345,7 @@ export function MapPageController() {
   };
 
   const navigateHere = (place: PlaceSummary) => {
-    const c = currentLocation ?? { lat: -6.2003, lng: 106.877 };
+    const c = currentLocation ?? FOCUS_CENTER;
     const fromLabel = currentLocationLabel ?? "Lokasi saya";
     announceLiveRegion(`Membuka navigasi rute menuju ${place.name}.`);
     router.push(
@@ -323,24 +354,21 @@ export function MapPageController() {
   };
 
   const toggleResults = () => {
-    setResultsOpen((open) => {
-      announceLiveRegion(open ? "Panel hasil ditutup." : "Panel hasil dibuka. Daftar tempat tersedia.");
-      return !open;
-    });
+    const next = !resultsOpen;
+    setResultsOpen(next);
+    announceLiveRegion(next ? "Panel hasil ditutup." : "Panel hasil dibuka. Daftar tempat tersedia.");
   };
 
   const toggleLayers = () => {
-    setLayersOpen((open) => {
-      announceLiveRegion(open ? "Panel layer ditutup." : "Panel layer dibuka.");
-      return !open;
-    });
+    const next = !layersOpen;
+    setLayersOpen(next);
+    announceLiveRegion(next ? "Panel layer ditutup." : "Panel layer dibuka.");
   };
 
   const toggleMobile = () => {
-    setMobileOpen((open) => {
-      announceLiveRegion(open ? "Panel bawah ditutup." : "Panel bawah dibuka.");
-      return !open;
-    });
+    const next = !mobileOpen;
+    setMobileOpen(next);
+    announceLiveRegion(next ? "Panel bawah ditutup." : "Panel bawah dibuka.");
   };
 
   const featuredKinds = activeLayer === "all" ? profileKinds : [activeLayer];
@@ -604,7 +632,7 @@ export function MapPageController() {
             >
               <Accessibility className="h-10 w-10 animate-pulse-dot" />
             </span>
-            <h2 className="mt-6 text-3xl font-black tracking-tight">BLINDSPOT</h2>
+            <h2 className="mt-6 text-3xl font-black tracking-tight">ANAPSI</h2>
             <p className="label-uppercase mt-1 text-xs text-primary">Peta Aksesibilitas 3D Realtime</p>
             <p className="mt-4 text-sm text-muted-foreground">
               {leaving ? "Peta siap…" : "Mengambil lokasimu & mempersiapkan peta…"}
@@ -633,6 +661,7 @@ export function MapPageController() {
                 onSelectPlace={setSelectedPlaceId}
                 currentLocation={currentLocation}
                 onLocate={locate}
+                focus={focusedPoint}
               />
             </div>
           ) : (
@@ -663,22 +692,25 @@ export function MapPageController() {
 
           {view === "map" ? (
             <>
-              {/* Bilah alat atas — baris tunggal, tidak membungkus agar tidak menimpa panel */}
+              {/* Bilah alat atas — membungkus aman: pencarian selalu punya ruang, tidak terpotong */}
               <div className="pointer-events-none absolute inset-x-0 top-0 z-40">
-                <div className="pointer-events-auto flex items-center gap-1.5 px-2 py-2 sm:gap-2">
+                <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 border-b border-border/50 bg-card/90 px-2 py-2 shadow-soft backdrop-blur sm:gap-2.5">
                   <span
                     aria-hidden="true"
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-12 primary-solid text-primary-foreground"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-12 primary-solid text-primary-foreground sm:h-11 sm:w-11"
                   >
                     <Accessibility className="h-5 w-5" />
                   </span>
                   <div className="hidden shrink-0 lg:block">
                     <p className="label-uppercase text-[11px] leading-none text-primary">Peta Aksesibilitas</p>
-                    <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground">3D realtime · OSM</p>
+                    <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground">3D realtime</p>
                   </div>
-                  <div className="min-w-0 flex-[1_1_160px] sm:flex-[1_1_220px]">
+                  <div className="order-2 min-w-0 flex-[1_1_100%] sm:order-none sm:min-w-40 sm:flex-[1_1_220px] lg:min-w-56">
                     <SearchInput
                       onSearch={handleSearch}
+                      onSuggest={suggest}
+                      suggestOrigin={origin}
+                      onPickSuggestion={pickSuggestion}
                       label="Cari tempat"
                       placeholder="Cari tempat, kategori, atau jalan…"
                       initialQuery={initialQuery}
@@ -700,10 +732,6 @@ export function MapPageController() {
                       ))}
                     </select>
                   </label>
-                  <Button variant="outline" size="sm" onClick={locate} loading={locating} className="shrink-0 px-2.5">
-                    <Navigation className="h-4 w-4" aria-hidden="true" />
-                    <span className="hidden sm:inline">Lokasi saya</span>
-                  </Button>
                   {viewToggle}
                   <Button
                     ref={menuButtonRef}
@@ -719,7 +747,7 @@ export function MapPageController() {
                     <Menu className="h-4 w-4" aria-hidden="true" />
                     <span className="hidden sm:inline">Menu</span>
                   </Button>
-                  <div className="hidden lg:block">
+                  <div className="hidden shrink-0 lg:block">
                     <TourTrigger feature="map" />
                   </div>
                 </div>
@@ -738,7 +766,7 @@ export function MapPageController() {
                     id="map-main-menu"
                     role="menu"
                     aria-label="Menu utama"
-                    className="absolute right-2 top-[4.75rem] w-72 max-w-[calc(100%-1rem)] overflow-hidden rounded-20 border border-border/60 bg-card/95 p-2 shadow-float backdrop-blur"
+                    className="absolute right-2 top-32 w-72 max-w-[calc(100%-1rem)] overflow-hidden rounded-20 border border-border/60 bg-card/95 p-2 shadow-float backdrop-blur sm:top-[4.75rem]"
                   >
                     {MENU_ITEMS.map((item, index) => (
                       <Link
@@ -898,7 +926,7 @@ export function MapPageController() {
               </div>
 
               {/* Status bawah (desktop) */}
-              <div className="pointer-events-none absolute bottom-24 left-3 z-10 hidden items-center gap-2 md:flex">
+              <div className="pointer-events-none absolute bottom-40 left-3 z-10 hidden items-center gap-2 md:flex">
                 <p className="pointer-events-auto rounded-12 border border-border/60 bg-card/85 px-3 py-1.5 text-xs text-muted-foreground shadow-float backdrop-blur">
                   {currentLocationLabel
                     ? `Posisi awal: ${currentLocationLabel}`
@@ -927,7 +955,7 @@ export function MapPageController() {
         <RiskSummaryPanel
           key={destination.id}
           place={destination}
-          origin={origin ?? { lat: -6.2003, lng: 106.877 }}
+          origin={origin ?? FOCUS_CENTER}
           fromLabel={currentLocationLabel ?? "Lokasi saya"}
           profile={activeProfile}
           onClose={closeDestination}

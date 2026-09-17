@@ -84,7 +84,7 @@ export default function ProfilePage() {
         <div>
           <h1 className="text-h1 font-black">Profil</h1>
           <p className="mt-2 text-muted-foreground">
-            Kelola akun, profil aksesibilitas, dan pengalaman BLINDSPOT.
+            Kelola akun, profil aksesibilitas, dan pengalaman ANAPSI.
           </p>
         </div>
         <TourTrigger feature="profile" />

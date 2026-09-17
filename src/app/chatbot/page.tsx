@@ -1,4 +1,4 @@
 import type { Metadata } from "next";
-import { GroqBlindChatbot } from "@/components/chatbot/GroqBlindChatbot";
-export const metadata: Metadata = { title: "Chatbot Tunanetra — Groq" };
-export default function Page() { return <GroqBlindChatbot />; }
+import { BlindChatbot } from "@/components/chatbot/BlindChatbot";
+export const metadata: Metadata = { title: "Chatbot Tunanetra" };
+export default function Page() { return <BlindChatbot />; }

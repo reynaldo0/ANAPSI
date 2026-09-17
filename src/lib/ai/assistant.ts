@@ -40,7 +40,7 @@ export interface AssistantRequest {
 export const UNKNOWN_DATA_TEXT = "Belum tersedia cukup data untuk memastikan kondisi tersebut.";
 
 export const ASSISTANT_DISCLAIMER =
-  "Asisten menjawab dari data BLINDSPOT (saat ini data demo untuk pengembangan, RULE 1) dan tidak mengarang kondisi aksesibilitas. Bedakan: terverifikasi / dilaporkan komunitas / belum terverifikasi.";
+  "Asisten menjawab dari data ANAPSI (saat ini data demo untuk pengembangan, RULE 1) dan tidak mengarang kondisi aksesibilitas. Bedakan: terverifikasi / dilaporkan komunitas / belum terverifikasi.";
 
 const ALL_NOUNS: readonly string[] = [
   "ramp",

@@ -32,7 +32,7 @@ export const FEATURE_TOURS: Record<TourFeature, TourConfig> = {
     label: "Beranda",
     storageKey: `${P}:home`,
     intro: {
-      title: "Kenalan dengan BLINDSPOT",
+      title: "Kenalan dengan ANAPSI",
       text: "Cari tempat, dengarkan skor aksesibilitas, dan laporkan hambatan. Kupandu lewat fitur-fiturnya sebentar saja — atau lewati dan langsung menjelajah.",
     },
     steps: [

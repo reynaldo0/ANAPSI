@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { BadgeCheck, Camera, CheckCircle2, ChevronLeft, ClipboardType, Mic, RefreshCw, Trash2, X } from "lucide-react";
+import { ArrowRight, Award, BadgeCheck, Camera, CheckCircle2, ChevronLeft, ClipboardType, Mic, PenLine, RefreshCw, Trash2, User, X, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -16,7 +16,9 @@ import { SignLanguagePanel } from "@/components/sign-language/SignLanguagePanel"
 import { badgeById } from "@/lib/gamification-defs";
 import { useSpeechRecognition } from "@/lib/voice/useSpeechRecognition";
 import { structureReportTranscript } from "@/lib/voice/report-structurer";
+import { useAudioManager } from "@/lib/audio/AudioManager";
 import { announceLiveRegion } from "@/lib/announcement";
+import { AudioPriority } from "@/types";
 import { cn } from "@/lib/cn";
 import {
   AFFECTED_PROFILES,
@@ -69,6 +71,27 @@ const METHOD_META: Record<Method, { icon: typeof Mic; title: string; note: strin
   write: { icon: ClipboardType, title: "Ketik", note: "Isi formulir laporan secara manual." },
 };
 
+const METHOD_STYLES: Record<Method, { hover: string; iconBg: string; badge: string; label: string }> = {
+  voice: {
+    hover: "hover:border-accent",
+    iconBg: "bg-accent-soft text-accent",
+    badge: "border-accent/50 bg-accent-soft text-accent-foreground",
+    label: "Paling mudah",
+  },
+  photo: {
+    hover: "hover:border-primary",
+    iconBg: "bg-primary-soft text-primary",
+    badge: "border-primary/50 bg-primary-soft text-primary",
+    label: "Dengan bukti",
+  },
+  write: {
+    hover: "hover:border-success",
+    iconBg: "bg-success-soft text-success",
+    badge: "border-success/50 bg-success-soft text-success",
+    label: "Paling lengkap",
+  },
+};
+
 function profileLabel(value: AffectedProfile): string {
   return AFFECTED_PROFILES.find((p) => p.value === value)?.label ?? value;
 }
@@ -77,6 +100,7 @@ export function ReportFlow() {
   const { user } = useAuth();
   const { toast } = useToast();
   const gamification = useGamification();
+  const audio = useAudioManager();
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   const [step, setStep] = useState<Step>("method");
@@ -343,13 +367,57 @@ export function ReportFlow() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8">
-      <h1 className="text-h1 font-bold" tabIndex={-1} ref={headingRef}>
-        {step === "method" ? "Lapor Hambatan Aksesibilitas" : step === "review" ? "Tinjau laporan" : "Detail laporan"}
-      </h1>
-      <p className="mt-2 text-muted-foreground">
-        Ramah & cepat — kamu cuma perlu 3 langkah.
-      </p>
-      <ol className="mt-4 grid grid-cols-3 gap-2" aria-label="Tahapan melapor">
+      <section aria-labelledby="report-title" className="overflow-hidden rounded-24 border border-border shadow-card">
+        <div className="grad-primary p-6 text-white sm:p-8">
+          <p className="label-uppercase text-[11px] font-bold text-white/80">Bantu sesama · cukup 3 langkah</p>
+          <h1 id="report-title" className="mt-2 text-h1 font-black" tabIndex={-1} ref={headingRef}>
+            {step === "method" ? "Lapor Hambatan Aksesibilitas" : step === "review" ? "Tinjau laporan" : "Detail laporan"}
+          </h1>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/90">
+            Temukan trotoar rusak, ramp tertutup, atau guiding block hilang? Ceritakan di sini — komunitas langsung
+            mengetahuinya, dan kamu tetap dapat poin tanpa perlu masuk.
+          </p>
+          <ul className="mt-4 flex flex-wrap gap-2 text-xs font-bold">
+            {(
+              [
+                [ClipboardType, "Ketik, bicara, atau foto"],
+                [User, "Tanpa masuk, tetap tercatat"],
+                [Award, "Poin & lencana otomatis"],
+              ] as Array<[LucideIcon, string]>
+            ).map(([Icon, label]) => (
+              <li key={label} className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5">
+                <Icon className="h-4 w-4" aria-hidden="true" /> {label}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border bg-card px-4 py-3 text-sm sm:px-6">
+          {user ? (
+            <p className="font-medium">
+              Melapor sebagai <strong>{user.displayName}</strong> — poin tersimpan ke akunmu.
+            </p>
+          ) : (
+            <p className="flex items-center gap-2">
+              <BadgeCheck className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+              <span>Belum masuk? Tidak masalah — laporan anonim tetap masuk ke komunitas.</span>
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              const text = "Melapor itu cepat dan anonim. Pilih cara di bawah, lalu ikuti langkahnya.";
+              announceLiveRegion(text, { assertive: true });
+              audio.speak(text, AudioPriority.UserRequestedInformation);
+            }}
+            className="ml-auto inline-flex h-11 items-center gap-2 rounded-12 border border-border bg-background px-4 text-sm font-bold hover:bg-muted"
+          >
+            <PenLine className="h-4 w-4" aria-hidden="true" />
+            Dengarkan panduan
+          </button>
+        </div>
+      </section>
+
+      <ol className="mt-5 grid grid-cols-3 gap-2" aria-label="Tahapan melapor">
         {[
           ["method", "1", "Pilih cara", "Ketik, bicara, atau foto"],
           ["form", "2", "Isi detail", "Apa, siapa yang terdampak, di mana"],
@@ -379,17 +447,6 @@ export function ReportFlow() {
           );
         })}
       </ol>
-      {user ? (
-        <p className="mt-1 text-sm text-muted-foreground">Melapor sebagai {user.displayName}.</p>
-      ) : (
-        <p className="mt-1 text-sm text-muted-foreground">
-          Belum masuk — laporan akan tercatat sebagai anonim dan tetap masuk ke sistem.
-        </p>
-      )}
-      <p className="mt-2 inline-flex max-w-full items-center gap-2 rounded-full border-2 border-primary/40 bg-primary-soft px-4 py-2 text-sm font-bold">
-        <BadgeCheck className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-        Setiap laporan fasilitas rusak memberi poin & lencana — tanpa perlu masuk.
-      </p>
       <div className="mt-4">
         <TourTrigger feature="report" />
       </div>
@@ -399,20 +456,31 @@ export function ReportFlow() {
           {(Object.keys(METHOD_META) as Method[]).map((key) => {
             const meta = METHOD_META[key];
             const Icon = meta.icon;
+            const style = METHOD_STYLES[key];
             return (
               <button
                 key={key}
                 type="button"
                 onClick={() => chooseMethod(key)}
-                className="flex w-full items-center gap-4 rounded-20 border-2 border-border bg-card p-4 text-left shadow-card transition-all hover:-translate-y-0.5 hover:border-primary focus-visible:outline-offset-2"
+                className={cn(
+                  "group flex w-full items-center gap-4 rounded-20 border-2 border-border bg-card p-4 text-left shadow-card transition-all hover:-translate-y-0.5 hover:shadow-float focus-visible:outline-offset-2",
+                  style.hover,
+                )}
               >
-                <span aria-hidden="true" className="flex h-13 w-13 shrink-0 items-center justify-center rounded-14 bg-primary-soft text-2xl">
-                  <Icon className="h-6 w-6 text-primary" />
+                <span aria-hidden="true" className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-16", style.iconBg)}>
+                  <Icon className="h-7 w-7" />
                 </span>
-                <span>
-                  <span className="block text-lg font-black">{meta.title}</span>
-                  <span className="block text-sm text-muted-foreground">{meta.note}</span>
+                <span className="min-w-0">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="text-lg font-black">{meta.title}</span>
+                    <span className={cn("rounded-full border px-2.5 py-0.5 text-[11px] font-black", style.badge)}>{style.label}</span>
+                  </span>
+                  <span className="mt-0.5 block text-sm text-muted-foreground">{meta.note}</span>
                 </span>
+                <ArrowRight
+                  className="ml-auto h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
+                  aria-hidden="true"
+                />
               </button>
             );
           })}

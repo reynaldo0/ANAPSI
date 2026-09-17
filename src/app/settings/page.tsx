@@ -3,7 +3,7 @@ import { SettingsPanel } from "@/components/settings/SettingsPanel";
 
 export const metadata: Metadata = {
   title: "Pengaturan",
-  description: "Atur tampilan, aksesibilitas, dan preferensi BLINDSPOT.",
+  description: "Atur tampilan, aksesibilitas, dan preferensi ANAPSI.",
 };
 
 export default function SettingsPage() {

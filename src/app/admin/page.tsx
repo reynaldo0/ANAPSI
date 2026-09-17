@@ -3,7 +3,7 @@ import { AdminPanel } from "@/components/admin/AdminPanel";
 
 export const metadata: Metadata = {
   title: "Panel Admin",
-  description: "Moderasi laporan aksesibilitas — hanya untuk admin BLINDSPOT.",
+  description: "Moderasi laporan aksesibilitas — hanya untuk admin ANAPSI.",
 };
 
 export default function AdminPage() {

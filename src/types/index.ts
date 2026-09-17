@@ -39,7 +39,7 @@ export interface AppearanceSettings {
 }
 
 export const DEFAULT_APPEARANCE: AppearanceSettings = {
-  theme: "system",
+  theme: "light",
   highContrast: false,
   reduceMotion: false,
   textSize: 1,

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Crosshair, Maximize, Navigation, Satellite } from "lucide-react";
-import { haversineKm } from "@/lib/geo";
+import { haversineKm, FOCUS_CENTER } from "@/lib/geo";
 import { announceLiveRegion } from "@/lib/announcement";
 import { fetchGuidingLines, bboxFromPolyline } from "@/lib/realtimeOverpass";
 import type { LatLng, MapLineFeature, RouteOption } from "@/types";
@@ -153,7 +153,7 @@ export function JourneyMap({ route, stepIndex, onStepReached, onNext, onPrev }: 
         if (cancelled || !containerRef.current) return;
         const first = geometry[0];
         const last = geometry[geometry.length - 1];
-        const start: LatLng = first ?? { lat: -6.2003, lng: 106.877 };
+        const start: LatLng = first ?? FOCUS_CENTER;
         const end: LatLng = last ?? start;
         const mid: LatLng = {
           lat: (start.lat + end.lat) / 2,
@@ -167,7 +167,7 @@ export function JourneyMap({ route, stepIndex, onStepReached, onNext, onPrev }: 
           zoom: 15,
           pitch: 48,
           bearing: -18,
-          attributionControl: true,
+          attributionControl: false,
           canvasContextAttributes: { antialias: true },
         });
         mapRef.current = m;
@@ -580,8 +580,7 @@ export function JourneyMap({ route, stepIndex, onStepReached, onNext, onPrev }: 
               : "Menunggu sinyal GPS."}
       </p>
       <p className="absolute bottom-1 left-3 z-10 text-[11px] text-slate-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-        Garis biru: rute kamu. Garis kuning: guiding block (bila terpetakan di OpenStreetMap). Titik biru berdenyut:
-        posisimu.
+        Garis biru: rute kamu. Garis kuning: guiding block. Titik biru berdenyut: posisimu.
       </p>
     </div>
   );

@@ -16,7 +16,7 @@ interface Frame {
 const VISUAL_FRAMES: Frame[] = [
   {
     icon: "👋",
-    title: "Selamat datang, BLINDSPOT adalah navigator suaramu",
+    title: "Selamat datang, ANAPSI adalah navigator suaramu",
     body: "Setiap halaman punya tombol yang bisa dibacakan. Tekan tombol mikrofon besar lalu bicara — aplikasi menjawab lewat suara.",
   },
   {
@@ -36,7 +36,7 @@ const VISUAL_FRAMES: Frame[] = [
   },
   {
     icon: "🤖",
-    title: "Chatbot suara Groq",
+    title: "Chatbot suara",
     body: "Tombol Bot di kanan bawah membuka chatbot. Tekan mikrofon, bicara, dan jawabannya dibacakan. Khusus untukmu.",
   },
   {
@@ -49,7 +49,7 @@ const VISUAL_FRAMES: Frame[] = [
 const WHEELCHAIR_FRAMES: Frame[] = [
   {
     icon: "👋",
-    title: "Selamat datang, BLINDSPOT memprioritaskan kursi roda",
+    title: "Selamat datang, ANAPSI memprioritaskan kursi roda",
     body: "Semua rute memprioritaskan jalur bebas tangga, ramp, dan pintu lebar. Tombol besar agar mudah ditekan.",
   },
   {
@@ -93,7 +93,7 @@ function blankFrame(): Frame {
 const STANDARD_FRAMES: Frame[] = [
   {
     icon: "👋",
-    title: "Selamat datang di BLINDSPOT",
+    title: "Selamat datang di ANAPSI",
     body: "Temukan tempat aksesibel dan laporkan hambatan untuk membantu temanmu yang tunanetra atau pengguna kursi roda.",
   },
   {

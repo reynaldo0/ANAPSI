@@ -4,8 +4,9 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import type { GamificationStats } from "@/types";
@@ -78,12 +79,54 @@ function readState(): LocalGamificationState {
   return { reporterId, reports: 0, verifiedReports: 0, points: 0, badges: [], lastEarned: [] };
 }
 
+const EMPTY_STATE: LocalGamificationState = {
+  reporterId: "",
+  reports: 0,
+  verifiedReports: 0,
+  points: 0,
+  badges: [],
+  lastEarned: [],
+};
+
+let gamSnapshot: LocalGamificationState = EMPTY_STATE;
+const gamListeners = new Set<() => void>();
+
+function subscribeGam(listener: () => void): () => void {
+  gamListeners.add(listener);
+  return () => {
+    gamListeners.delete(listener);
+  };
+}
+
+function getGamSnapshot(): LocalGamificationState {
+  return gamSnapshot;
+}
+
+/** Saat SSR/hidrasi gunakan nilai default agar tidak terjadi hydration mismatch. */
+function getServerGamSnapshot(): LocalGamificationState {
+  return EMPTY_STATE;
+}
+
+function commitGam(next: LocalGamificationState): void {
+  gamSnapshot = next;
+  for (const listener of Array.from(gamListeners)) listener();
+}
+
+function readStoredState(): LocalGamificationState {
+  if (typeof window === "undefined") return EMPTY_STATE;
+  const reporterId = readReporterId();
+  return { ...readState(), reporterId };
+}
+
 export function GamificationProvider({ children }: { children: ReactNode }) {
-  const [reporterId] = useState(readReporterId);
-  const [state, setState] = useState<LocalGamificationState>(readState);
+  const state = useSyncExternalStore(subscribeGam, getGamSnapshot, getServerGamSnapshot);
+
+  useEffect(() => {
+    commitGam(readStoredState());
+  }, []);
 
   const persist = useCallback((next: LocalGamificationState) => {
-    setState(next);
+    commitGam(next);
     try {
       localStorage.setItem(
         GAMIFICATION_KEY,
@@ -103,7 +146,7 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
   const applyServerResult = useCallback(
     (result: GamificationStats) => {
       const next: LocalGamificationState = {
-        reporterId: result.reporterId || reporterId,
+        reporterId: result.reporterId || getGamSnapshot().reporterId,
         reports: result.reports,
         verifiedReports: result.verifiedReports,
         points: result.points,
@@ -113,20 +156,23 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
       persist(next);
       return next;
     },
-    [persist, reporterId],
+    [persist],
   );
 
   const sync = useCallback(
     (result: GamificationStats) => {
       const next = applyServerResult(result);
-      setState((prev) => ({ ...next, lastEarned: prev.lastEarned.length ? prev.lastEarned : next.lastEarned }));
+      commitGam({
+        ...next,
+        lastEarned: getGamSnapshot().lastEarned.length ? getGamSnapshot().lastEarned : next.lastEarned,
+      });
     },
     [applyServerResult],
   );
 
   const value = useMemo<GamificationContextValue>(
-    () => ({ reporterId, state, applyServerResult, sync }),
-    [reporterId, state, applyServerResult, sync],
+    () => ({ reporterId: state.reporterId, state, applyServerResult, sync }),
+    [state, applyServerResult, sync],
   );
 
   return <GamificationContext.Provider value={value}>{children}</GamificationContext.Provider>;

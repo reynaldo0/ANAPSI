@@ -14,7 +14,7 @@ import { cn } from "@/lib/cn";
 
 const VOICE_COPY: VoiceCopy = {
   listening: "Chatbot mendengarkan. Bicara pelan dan jelas, lalu diam sejenak.",
-  ended: "Mendengarkan selesai. Mengirim ke Groq.",
+  ended: "Mendengarkan selesai. Mengirim pesan.",
   denied: "Mikrofon ditolak. Silakan ketik.",
   noSpeech: "Tidak ada suara. Coba tekan mikrofon lagi.",
   interim: (t) => `Mendengar: ${t}`,
@@ -22,17 +22,16 @@ const VOICE_COPY: VoiceCopy = {
 
 type ChatMsg = { role: "user" | "assistant"; content: string };
 
-export function GroqBlindChatbot() {
+export function BlindChatbot() {
   const audio = useAudioManager();
   const voice = useSpeechRecognition(VOICE_COPY);
   const sign = useSignLanguage();
   const [input, setInput] = useState("");
   const [history, setHistory] = useState<ChatMsg[]>([
-    { role: "assistant", content: "Halo! Saya teman ngobrol BLINDSPOT khusus tunanetra, didukung Groq. Bicara atau ketik — saya jawab singkat dan bisa dibacakan. Mau cari tempat, cek hambatan, atau laporkan?" },
+    { role: "assistant", content: "Halo! Saya teman ngobrol ANAPSI khusus tunanetra. Bicara atau ketik — saya jawab singkat dan bisa dibacakan. Mau cari tempat, cek hambatan, atau laporkan?" },
   ]);
   const [loading, setLoading] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(true);
-  const [useGroqSTT, setUseGroqSTT] = useState(false);
   const [recording, setRecording] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const handledRef = useRef(0);
@@ -54,10 +53,10 @@ export function GroqBlindChatbot() {
     setHistory(nextHistory);
     setInput("");
     setLoading(true);
-    announceLiveRegion("Mengirim ke chatbot Groq");
+    announceLiveRegion("Mengirim pesan ke chatbot");
     try {
       const res = await fetch("/api/chatbot", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: msg, history }) });
-      const body = await res.json() as { ok: boolean; data?: { reply: string; disclaimer?: string }; error?: { message: string } };
+      const body = await res.json() as { ok: boolean; data?: { reply: string }; error?: { message: string } };
       if (!res.ok || !body.ok || !body.data) throw new Error(body.error?.message ?? "Gagal");
       const reply = body.data.reply;
       setHistory((h) => [...h, { role: "assistant", content: reply }]);
@@ -70,21 +69,21 @@ export function GroqBlindChatbot() {
     } finally { setLoading(false); }
   };
 
-  // Browser STT -> auto send
   useEffect(() => {
     sendRef.current = send;
   });
 
+  // Browser STT -> auto send
   useEffect(() => {
     if (!voice.finalTranscript) return;
     const fresh = voice.finalTranscript.slice(handledRef.current).trim();
     handledRef.current = voice.finalTranscript.length;
     if (!fresh) return;
-    if (!useGroqSTT) void sendRef.current(fresh);
-  }, [voice.finalTranscript, useGroqSTT]);
+    void sendRef.current(fresh);
+  }, [voice.finalTranscript]);
 
-  // Groq Whisper record
-  const toggleGroqRecord = async () => {
+  // Rekaman untuk transkripsi lebih akurat
+  const toggleRecord = async () => {
     const mr = mediaRecorderRef.current;
     if (mr && mr.state === "recording") {
       mr.stop();
@@ -101,7 +100,7 @@ export function GroqBlindChatbot() {
         const blob = new Blob(chunksRef.current, { type: rc.mimeType });
         const fd = new FormData();
         fd.append("audio", blob, "voice.webm");
-        announceLiveRegion("Mengirim audio ke Groq Whisper");
+        announceLiveRegion("Mengirim audio untuk transkripsi");
         try {
           const res = await fetch("/api/chatbot/transcribe", { method: "POST", body: fd });
           const body = await res.json() as { ok: boolean; data?: { transcript: string }; error?: { message: string } };
@@ -112,26 +111,22 @@ export function GroqBlindChatbot() {
       mediaRecorderRef.current = rc;
       rc.start();
       setRecording(true);
-      announceLiveRegion("Merekam untuk Groq Whisper. Bicara sekarang.");
-    } catch { announceLiveRegion("Izin mikrofon ditolak untuk rekaman Groq", { assertive: true }); }
+      announceLiveRegion("Merekam untuk transkripsi akurat. Bicara sekarang.");
+    } catch { announceLiveRegion("Izin mikrofon ditolak untuk rekaman suara", { assertive: true }); }
   };
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-6">
       <header className="rounded-16 border-2 border-primary bg-card p-4 shadow-card">
-        <h1 className="flex items-center gap-2 text-h2 font-black"><Bot className="h-6 w-6 text-primary" aria-hidden="true" /> Chatbot Tunanetra — Groq</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Berbeda dari Asisten data: ini teman ngobrol AI cepat (Groq llama + Whisper) khusus tunanetra — jawab singkat, bisa dibacakan otomatis, tidak mengarang data aksesibilitas.</p>
+        <h1 className="flex items-center gap-2 text-h2 font-black"><Bot className="h-6 w-6 text-primary" aria-hidden="true" /> Chatbot Tunanetra</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Teman ngobrol suara khusus tunanetra — jawab singkat, bisa dibacakan otomatis, tidak mengarang data aksesibilitas.</p>
         <div className="mt-3 flex flex-wrap gap-2">
           <button type="button" onClick={() => setAutoSpeak((v) => !v)} aria-pressed={autoSpeak} className={`inline-flex h-11 items-center gap-2 rounded-12 border-2 px-4 text-sm font-bold ${autoSpeak ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background"}`}>
             {autoSpeak ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />} {autoSpeak ? "Bacakan otomatis ON" : "Bacakan OFF"}
           </button>
-          <label className="inline-flex h-11 items-center gap-2 rounded-12 border-2 border-border bg-card px-3 text-sm font-bold">
-            <input type="checkbox" checked={useGroqSTT} onChange={(e) => setUseGroqSTT(e.target.checked)} className="h-4 w-4 accent-primary" /> Groq Whisper STT
-          </label>
           <Button variant="ghost" size="sm" onClick={() => { setHistory((h) => h.slice(0, 1)); audio.stop(); }}><Trash2 className="h-4 w-4" /> Bersihkan</Button>
           <SignLanguageToggle />
         </div>
-        {!process.env.NEXT_PUBLIC_GROQ_CONFIGURED ? <p className="mt-2 rounded-10 bg-warning-soft px-3 py-2 text-xs font-medium text-warning">Tips: set <code>GROQ_API_KEY</code> di .env untuk aktifkan Groq. Tanpa key, chatbot tetap jalan dengan fallback data BLINDSPOT.</p> : null}
       </header>
 
       <div ref={listRef} role="log" aria-live="polite" aria-label="Riwayat chat" className="flex max-h-[52vh] min-h-[280px] flex-col gap-3 overflow-y-auto rounded-16 border-2 border-border bg-muted/30 p-3 sm:max-h-[56vh]">
@@ -161,12 +156,12 @@ export function GroqBlindChatbot() {
         <button type="button" onClick={() => (voice.status === "listening" ? voice.stop() : voice.start())} aria-pressed={voice.status === "listening"} className={`flex h-14 items-center justify-center gap-2 rounded-12 border-2 text-base font-black ${voice.status === "listening" ? "border-danger bg-danger text-white animate-pulse" : "border-border bg-card hover:bg-muted"}`}>
           {voice.status === "listening" ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />} {voice.status === "listening" ? "Berhenti" : "Bicara (Browser STT)"}
         </button>
-        <button type="button" onClick={() => void toggleGroqRecord()} aria-label="Rekam untuk Groq Whisper, khusus tunanetra akurasi tinggi" className={`flex h-14 items-center justify-center gap-2 rounded-12 border-2 text-base font-black ${recording ? "border-danger bg-danger text-white" : "border-primary bg-primary-soft text-primary hover:bg-primary hover:text-primary-foreground"}`}>
-          <Mic className="h-5 w-5" /> {recording ? "Stop Rekam (Groq)" : "Rekam Groq Whisper"}
+        <button type="button" onClick={() => void toggleRecord()} aria-label="Rekam suara untuk transkripsi lebih akurat" className={`flex h-14 items-center justify-center gap-2 rounded-12 border-2 text-base font-black ${recording ? "border-danger bg-danger text-white" : "border-primary bg-primary-soft text-primary hover:bg-primary hover:text-primary-foreground"}`}>
+          <Mic className="h-5 w-5" /> {recording ? "Stop Rekam" : "Rekam Suara Akurat"}
         </button>
       </div>
       {voice.interim ? <p className="rounded-10 bg-muted px-3 py-2 text-sm italic" aria-live="polite">{voice.interim}</p> : null}
-      <p className="text-center text-xs text-muted-foreground">Semua suara bisa dihentikan dengan tombol Stop/Repeat di audio bar. Data aksesibilitas tetap jujur dari BLINDSPOT.</p>
+      <p className="text-center text-xs text-muted-foreground">Semua suara bisa dihentikan dengan tombol Stop/Repeat di audio bar. Data aksesibilitas tetap jujur dari ANAPSI.</p>
     </div>
   );
 }

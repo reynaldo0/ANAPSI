@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { HeartHandshake, Megaphone } from "lucide-react";
+import { BadgeCheck, Clock3, FileText, HeartHandshake, MapIcon, Megaphone } from "lucide-react";
 import Link from "next/link";
 import { CommunityFeed } from "@/components/community/CommunityFeed";
 import { listReports } from "@/lib/data/reports";
@@ -11,31 +11,42 @@ export default async function CommunityPage() {
   const verified = data.filter((r) => r.status === "VERIFIED").length;
   const inProgress = data.filter((r) => r.status === "PENDING" || r.status === "ACTIVE").length;
 
+  const stats = [
+    { icon: FileText, value: data.length, label: "Laporan masuk" },
+    { icon: BadgeCheck, value: verified, label: "Terverifikasi" },
+    { icon: Clock3, value: inProgress, label: "Sedang ditindaklanjuti" },
+  ];
+
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6">
-      <header className="overflow-hidden rounded-24 border-2 border-primary/50 bg-card shadow-card">
-        <div className="bg-primary-soft/60 p-6 pb-5">
-          <p className="label-uppercase text-[11px] text-primary">Saling menjaga</p>
-          <h1 className="mt-1 text-h1 font-black">Komunitas BLINDSPOT</h1>
-          <p className="mt-2 text-muted-foreground">
-            Teman-teman di sekitarmu saling melaporkan jalan mana yang aman, mana yang berisiko, dan mana yang telah
-            diperbaiki. Kamu juga bisa ikut membantu.
-          </p>
+      <header className="overflow-hidden rounded-24 border border-border shadow-card">
+        <div className="grad-primary p-6 text-white sm:p-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="label-uppercase text-[11px] font-bold text-white/80">Saling menjaga</p>
+              <h1 className="mt-1 text-h1 font-black">Komunitas ANAPSI</h1>
+              <p className="mt-2 max-w-lg text-sm leading-relaxed text-white/90">
+                Teman-teman di sekitarmu saling melaporkan jalan mana yang aman, mana yang berisiko, dan mana yang
+                telah diperbaiki. Kamu juga bisa ikut membantu.
+              </p>
+            </div>
+            <span aria-hidden="true" className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-20 bg-white/10 text-white sm:flex">
+              <HeartHandshake className="h-7 w-7" />
+            </span>
+          </div>
+          <ul className="mt-5 grid grid-cols-3 gap-2 sm:gap-3">
+            {stats.map((stat) => (
+              <li key={stat.label} className="rounded-16 bg-white/10 px-2 py-3 text-center">
+                <stat.icon className="mx-auto h-5 w-5 text-white/80" aria-hidden="true" />
+                <p className="mt-1 text-h3 font-black">{stat.value}</p>
+                <p className="mt-0.5 text-[11px] font-semibold text-white/80">{stat.label}</p>
+              </li>
+            ))}
+          </ul>
         </div>
-        <div className="grid grid-cols-3 divide-x divide-border border-t border-border bg-card">
-          <div className="p-4 text-center">
-            <p className="text-h3 font-black text-primary">{data.length}</p>
-            <p className="text-xs text-muted-foreground">Laporan masuk</p>
-          </div>
-          <div className="p-4 text-center">
-            <p className="text-h3 font-black text-success">{verified}</p>
-            <p className="text-xs text-muted-foreground">Terverifikasi</p>
-          </div>
-          <div className="p-4 text-center">
-            <p className="text-h3 font-black text-warning">{inProgress}</p>
-            <p className="text-xs text-muted-foreground">Sedang ditindaklanjuti</p>
-          </div>
-        </div>
+        <p className="border-t border-border bg-card px-4 py-3 text-center text-xs text-muted-foreground">
+          Terima kasih untuk semua pelapor — satu laporan bisa menyelamatkan seseorang dari kecelakaan.
+        </p>
       </header>
 
       <div className="mt-4 flex flex-col gap-2 sm:flex-row">
@@ -46,10 +57,13 @@ export default async function CommunityPage() {
           <Megaphone className="h-5 w-5" aria-hidden="true" />
           Bantu laporkan hambatan
         </Link>
-        <p className="inline-flex flex-1 items-center justify-center gap-2 rounded-16 border-2 border-border bg-card px-5 text-sm font-semibold text-muted-foreground">
-          <HeartHandshake className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-          Setiap laporan membantu sesama.
-        </p>
+        <Link
+          href="/map"
+          className="inline-flex h-13 flex-1 items-center justify-center gap-2 rounded-16 border-2 border-border bg-card px-5 text-sm font-semibold text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
+        >
+          <MapIcon className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+          Lihat lokasi di peta
+        </Link>
       </div>
 
       <CommunityFeed />

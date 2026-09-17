@@ -133,7 +133,7 @@ export function AdminPanel() {
       <div className="rounded-16 border border-danger bg-danger-soft p-6 text-center">
         <p className="font-semibold text-danger">✕ Akses ditolak</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Halaman ini hanya tersedia untuk admin BLINDSPOT.
+          Halaman ini hanya tersedia untuk admin ANAPSI.
         </p>
       </div>
     );

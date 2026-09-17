@@ -8,10 +8,12 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { AudioPriority, type AudioRequest, type AudioStatus } from "@/types";
 import { createUtterance, getSpeechSynthesis } from "@/lib/audio/tts";
+import { useStoredValue } from "@/lib/state/useStoredValue";
 
 interface AudioManagerValue {
   supported: boolean;
@@ -42,14 +44,38 @@ function readStoredEnabled(): boolean {
   }
 }
 
+let enabledSnapshot = true;
+const enabledListeners = new Set<() => void>();
+
+function subscribeEnabled(listener: () => void): () => void {
+  enabledListeners.add(listener);
+  return () => {
+    enabledListeners.delete(listener);
+  };
+}
+
+function getEnabledSnapshot(): boolean {
+  return enabledSnapshot;
+}
+
+/** Saat SSR/hidrasi gunakan default agar tidak terjadi hydration mismatch. */
+function getServerEnabledSnapshot(): boolean {
+  return true;
+}
+
+function commitEnabled(value: boolean): void {
+  enabledSnapshot = value;
+  for (const listener of Array.from(enabledListeners)) listener();
+}
+
 export function AudioProvider({ children }: { children: ReactNode }) {
-  const [supported, setSupported] = useState(false);
-  const [enabled, setEnabledState] = useState(readStoredEnabled);
+  const supported = useStoredValue(() => getSpeechSynthesis() !== null, false);
+  const enabled = useSyncExternalStore(subscribeEnabled, getEnabledSnapshot, getServerEnabledSnapshot);
   const [status, setStatus] = useState<AudioStatus>("idle");
   const [currentText, setCurrentText] = useState<string | null>(null);
 
   useEffect(() => {
-    setSupported(getSpeechSynthesis() !== null);
+    commitEnabled(readStoredEnabled());
   }, []);
 
   const queueRef = useRef<AudioRequest[]>([]);
@@ -152,7 +178,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const setEnabled = useCallback(
     (value: boolean) => {
       enabledRef.current = value;
-      setEnabledState(value);
+      commitEnabled(value);
       try {
         localStorage.setItem(AUDIO_STORAGE_KEY, String(value));
       } catch {

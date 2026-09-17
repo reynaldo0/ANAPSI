@@ -35,7 +35,7 @@ export function HomeController() {
   }, []);
 
   const speakWelcome = () => {
-    const text = `Selamat datang di BLINDSPOT. ${user ? `Halo ${user.displayName}.` : ""} ${userType === "NON_DISABLED" ? "Kamu memilih pengalaman standar, bantu komunitas melaporkan hambatan. " : `Profil aktif ${profileMeta?.label ?? "belum dipilih"}. `}${isBlind ? "Tekan mikrofon di kiri bawah untuk komando suara. " : ""} Gunakan Jelajahi Peta 3D untuk mulai, atau baca Cara Pakai untuk tutorial singkat.`;
+    const text = `Selamat datang di ANAPSI. ${user ? `Halo ${user.displayName}.` : ""} ${userType === "NON_DISABLED" ? "Kamu memilih pengalaman standar, bantu komunitas melaporkan hambatan. " : `Profil aktif ${profileMeta?.label ?? "belum dipilih"}. `}${isBlind ? "Tekan mikrofon di kiri bawah untuk komando suara. " : ""} Gunakan Jelajahi Peta 3D untuk mulai, atau baca Cara Pakai untuk tutorial singkat.`;
     audio.speak(text, AudioPriority.UserRequestedInformation);
     announceLiveRegion(text, { assertive: true });
   };
@@ -67,7 +67,7 @@ export function HomeController() {
             Navigasi <span className="text-grad">Tanpa Hambatan</span>
           </h1>
           <p className="text-lg leading-relaxed text-foreground/90">
-            {user ? `Halo, ${user.displayName}.` : "Halo, teman BLINDSPOT."} Cari tempat, dengarkan skor aksesibilitas, dan buat rute aman — semuanya bisa lewat keyboard dan suara.
+            {user ? `Halo, ${user.displayName}.` : "Halo, teman ANAPSI."} Cari tempat, dengarkan skor aksesibilitas, dan buat rute aman — semuanya bisa lewat keyboard dan suara.
           </p>
           {choiceMeta ? (
             <p className="inline-flex items-center gap-2 self-start rounded-full border-2 border-border bg-background/60 px-4 py-2 text-sm font-bold">
@@ -107,8 +107,8 @@ export function HomeController() {
           <Link href="/assistant" aria-label="Tanya asisten aksesibilitas" className="flex h-13 items-center justify-center gap-2 rounded-16 border-2 border-border bg-card px-4 py-3 font-bold shadow-soft hover:-translate-y-0.5 hover:shadow-card"><Sparkles className="h-5 w-5 text-accent" aria-hidden="true" /> Tanya Asisten</Link>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Link href="/chatbot" aria-label="Chatbot suara Groq untuk tunanetra" className="flex h-14 items-center gap-3 rounded-16 border-2 border-accent bg-accent-soft px-5 font-bold text-accent-foreground shadow-soft hover:bg-accent hover:text-white">
-            <Bot className="h-6 w-6" aria-hidden="true" /> Chatbot Suara Groq
+          <Link href="/chatbot" aria-label="Chatbot suara untuk tunanetra" className="flex h-14 items-center gap-3 rounded-16 border-2 border-accent bg-accent-soft px-5 font-bold text-accent-foreground shadow-soft hover:bg-accent hover:text-white">
+            <Bot className="h-6 w-6" aria-hidden="true" /> Chatbot Suara
           </Link>
           <Link href="/tutorial" aria-label="Cara pakai aplikasi" className="flex h-14 items-center gap-3 rounded-16 border-2 border-border bg-card px-5 font-bold shadow-soft hover:bg-muted">
             <BookOpen className="h-6 w-6 text-primary" aria-hidden="true" /> Cara Pakai

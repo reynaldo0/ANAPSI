@@ -1,116 +1,123 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ */
-/* BLINDSPOT — NADI WebGIS design language                              */
-/* Palet mengikuti NADI (dark cinematic #0f0f0f, teal #0F4C5C/#16A3A3, */
-/* amber #E8A33D) dengan disiplin aksesibilitas WCAG AA: warna jenuh   */
-/* hanya untuk makna (tier/semantik) + selalu didampingi ikon/label.   */
-/* - Dark cinematic = identitas (default)                              */
-/* - Light mode = varian terang untuk fotofobia/lingkungan terang      */
+/* ANAPSI — design language                                             */
+/* Palet terang (white mode) default dengan disiplin aksesibilitas     */
+/* WCAG AA: warna jenuh hanya untuk makna (tier/semantik) + selalu      */
+/* didampingi ikon/label.                                               */
+/* - Light/white mode = identitas (default), ramah cahaya & low vision */
+/* - Dark mode = varian gelap opsional                                 */
 /* - High contrast = di atas semuanya                                  */
 /* ------------------------------------------------------------------ */
 :root {
-  /* NADI dark */
-  --background: #0f0f0f;
-  --foreground: #f9fafb;
-  --card: #171717;
-  --card-foreground: #f9fafb;
+  /* ANAPSI light (default) */
+  --background: #fafaf7;
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
 
-  --primary: #16a3a3;
-  --primary-hover: #2fc2c2;
-  --primary-soft: #12343d;
-  --primary-foreground: #032624;
+  --primary: #0b5e70;
+  --primary-hover: #084c5b;
+  --primary-soft: #deedf0;
+  --primary-foreground: #ffffff;
 
-  --accent: #e8a33d;
-  --accent-soft: #3a2d14;
-  --accent-foreground: #ffe9c7;
+  --accent: #f2a900;
+  --accent-soft: #fff0cb;
+  --accent-foreground: #4a3200;
 
-  --success: #34d399;
-  --success-soft: #0b2f26;
-  --warning: #d3b745;
-  --warning-soft: #332a10;
-  --danger: #f87171;
-  --danger-soft: #3b1212;
+  --success: #2e7d32;
+  --success-soft: #e3f1e4;
+  --warning: #b45309;
+  --warning-soft: #fff0d4;
+  --danger: #c62828;
+  --danger-soft: #fadcdc;
+  --info: #1565c0;
+  --info-soft: #dcecf7;
 
-  --muted: #1f1f1f;
-  --muted-foreground: #a1a1aa;
-  --border: #262626;
-  --input: #3f3f46;
-  --ring: #16a3a3;
+  --muted: #efefea;
+  --muted-foreground: #474747;
+  --border: #d7d7cf;
+  --input: #b9b9af;
+  --ring: #0b5e70;
 
-  --grad-primary: linear-gradient(135deg, #16a3a3 0%, #0f4c5c 100%);
+  --grad-primary: linear-gradient(135deg, #0b5e70 0%, #15adce 100%);
 }
 
 [data-theme="light"] {
-  --background: #fafaf9;
-  --foreground: #18181b;
+  --background: #fafaf7;
+  --foreground: #1a1a1a;
   --card: #ffffff;
-  --card-foreground: #18181b;
+  --card-foreground: #1a1a1a;
 
-  --primary: #0f4c5c;
-  --primary-hover: #0d4150;
-  --primary-soft: #d9efee;
+  --primary: #0b5e70;
+  --primary-hover: #084c5b;
+  --primary-soft: #deedf0;
   --primary-foreground: #ffffff;
 
-  --accent: #b45309;
-  --accent-soft: #fdeeda;
-  --accent-foreground: #431407;
+  --accent: #f2a900;
+  --accent-soft: #fff0cb;
+  --accent-foreground: #4a3200;
 
-  --success: #15803d;
-  --success-soft: #dcfce7;
+  --success: #2e7d32;
+  --success-soft: #e3f1e4;
   --warning: #b45309;
-  --warning-soft: #fef3c7;
-  --danger: #b91c1c;
-  --danger-soft: #fee2e2;
+  --warning-soft: #fff0d4;
+  --danger: #c62828;
+  --danger-soft: #fadcdc;
+  --info: #1565c0;
+  --info-soft: #dcecf7;
 
-  --muted: #f1f5f9;
-  --muted-foreground: #52525b;
-  --border: #d4d4d8;
-  --input: #a1a1aa;
-  --ring: #0f4c5c;
+  --muted: #efefea;
+  --muted-foreground: #474747;
+  --border: #d7d7cf;
+  --input: #b9b9af;
+  --ring: #0b5e70;
 
-  --grad-primary: linear-gradient(135deg, #0f4c5c 0%, #0d4150 100%);
+  --grad-primary: linear-gradient(135deg, #0b5e70 0%, #15adce 100%);
 }
 
 [data-theme="dark"] {
-  /* NADI dark — sama dengan default */
-  --background: #0f0f0f;
-  --foreground: #f9fafb;
-  --card: #171717;
-  --card-foreground: #f9fafb;
+  /* ANAPSI dark — varian gelap opsional */
+  --background: #0b1215;
+  --foreground: #f4f6f5;
+  --card: #131c20;
+  --card-foreground: #f4f6f5;
 
-  --primary: #16a3a3;
-  --primary-hover: #2fc2c2;
-  --primary-soft: #12343d;
-  --primary-foreground: #032624;
+  --primary: #15adce;
+  --primary-hover: #45c6e2;
+  --primary-soft: #0f2d37;
+  --primary-foreground: #04222c;
 
-  --accent: #e8a33d;
-  --accent-soft: #3a2d14;
-  --accent-foreground: #ffe9c7;
+  --accent: #ffc62e;
+  --accent-soft: #33290a;
+  --accent-foreground: #fff4d1;
 
-  --success: #34d399;
-  --success-soft: #0b2f26;
-  --warning: #d3b745;
-  --warning-soft: #332a10;
-  --danger: #f87171;
-  --danger-soft: #3b1212;
+  --success: #57c05c;
+  --success-soft: #0e2812;
+  --warning: #f59e0b;
+  --warning-soft: #2b2110;
+  --danger: #f47373;
+  --danger-soft: #331111;
+  --info: #5aa8e8;
+  --info-soft: #0e2233;
 
-  --muted: #1f1f1f;
-  --muted-foreground: #a1a1aa;
-  --border: #262626;
-  --input: #3f3f46;
-  --ring: #16a3a3;
+  --muted: #162125;
+  --muted-foreground: #a8b4b9;
+  --border: #223033;
+  --input: #38474c;
+  --ring: #45c6e2;
 
-  --grad-primary: linear-gradient(135deg, #16a3a3 0%, #0f4c5c 100%);
+  --grad-primary: linear-gradient(135deg, #15adce 0%, #0b5e70 100%);
 }
 
-[data-high-contrast="true"] {
-  --border: #f9fafb;
-  --ring: #ffffff;
-}
+[data-high-contrast="true"],
 [data-high-contrast="true"][data-theme="light"] {
   --border: #18181b;
   --ring: #000000;
+}
+[data-high-contrast="true"][data-theme="dark"] {
+  --border: #f9fafb;
+  --ring: #ffffff;
 }
 
 @theme inline {
@@ -131,6 +138,8 @@
   --color-warning-soft: var(--warning-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);

@@ -1,9 +1,8 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Accessibility, Sparkles } from "lucide-react";
-import { ACCESSIBILITY_PROFILES, APP_NAME, NAV_ITEMS } from "@/lib/constants";
-import { useAccessibilityProfile } from "@/lib/state/ProfileContext";
+import { Accessibility } from "lucide-react";
+import { APP_NAME, NAV_ITEMS } from "@/lib/constants";
 import { useAuth } from "@/lib/state/AuthContext";
 import { cn } from "@/lib/cn";
 
@@ -14,9 +13,7 @@ function isActive(pathname: string, href: string): boolean {
 
 export function AppHeader() {
   const pathname = usePathname();
-  const { activeProfile } = useAccessibilityProfile();
   const { user, loading, logout } = useAuth();
-  const profileMeta = ACCESSIBILITY_PROFILES.find((p) => p.value === activeProfile);
   if (pathname === "/map") return null;
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 glass lg:hidden">
@@ -38,8 +35,6 @@ export function AppHeader() {
           })}
         </ul>
         <div className="flex items-center gap-2">
-          <Link href="/chatbot" className="hidden items-center gap-1.5 rounded-full primary-solid px-3 py-1.5 text-sm font-black text-primary-foreground hover:opacity-90 sm:inline-flex"><Sparkles className="h-4 w-4" aria-hidden="true" /> Chatbot</Link>
-          {profileMeta ? <span className="hidden items-center gap-2 rounded-full border-2 border-border bg-card px-3 py-1.5 text-sm font-bold sm:inline-flex"><span aria-hidden="true" className="text-primary"><profileMeta.icon className="h-4 w-4" /></span>{profileMeta.label}</span> : null}
           {loading ? null : user ? (
             <>
               <Link href="/profile" className="hidden max-w-32 truncate rounded-full bg-muted px-3 py-1.5 text-sm font-bold hover:bg-card sm:inline-block">{user.displayName}</Link>

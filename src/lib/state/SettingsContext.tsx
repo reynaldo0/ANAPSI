@@ -6,7 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { STORAGE_KEYS } from "@/lib/constants";
@@ -54,42 +54,79 @@ function applyToDocument(settings: AppearanceSettings): void {
   }
 }
 
+let snapshot: AppearanceSettings = DEFAULT_APPEARANCE;
+const listeners = new Set<() => void>();
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function getSnapshot(): AppearanceSettings {
+  return snapshot;
+}
+
+/** Saat SSR/hidrasi gunakan nilai default agar tidak terjadi hydration mismatch. */
+function getServerSnapshot(): AppearanceSettings {
+  return DEFAULT_APPEARANCE;
+}
+
+function commit(next: AppearanceSettings): void {
+  snapshot = next;
+  for (const listener of Array.from(listeners)) listener();
+}
+
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<AppearanceSettings>(readStoredSettings);
+  const settings = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   useEffect(() => {
-    applyToDocument(settings);
-    try {
-      localStorage.setItem(STORAGE_KEYS.appearance, JSON.stringify(settings));
-    } catch {
-      // storage may be unavailable; appearance still applied
-    }
-  }, [settings]);
+    const stored = readStoredSettings();
+    commit(stored);
+    applyToDocument(stored);
+  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const onChange = () => {
-      if (settings.theme === "system") applyToDocument(settings);
+      if (getSnapshot().theme === "system") applyToDocument(getSnapshot());
     };
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
-  }, [settings]);
-
-  const setTheme = useCallback((theme: AppearanceTheme) => {
-    setSettings((prev) => ({ ...prev, theme }));
   }, []);
+
+  const commitWithSideEffects = useCallback((next: AppearanceSettings) => {
+    applyToDocument(next);
+    try {
+      localStorage.setItem(STORAGE_KEYS.appearance, JSON.stringify(next));
+    } catch {
+      // storage may be unavailable; appearance still applied
+    }
+    commit(next);
+  }, []);
+
+  const setTheme = useCallback(
+    (theme: AppearanceTheme) => {
+      commitWithSideEffects({ ...getSnapshot(), theme });
+    },
+    [commitWithSideEffects],
+  );
 
   const toggleHighContrast = useCallback(() => {
-    setSettings((prev) => ({ ...prev, highContrast: !prev.highContrast }));
-  }, []);
+    commitWithSideEffects({ ...getSnapshot(), highContrast: !getSnapshot().highContrast });
+  }, [commitWithSideEffects]);
 
   const toggleReduceMotion = useCallback(() => {
-    setSettings((prev) => ({ ...prev, reduceMotion: !prev.reduceMotion }));
-  }, []);
+    commitWithSideEffects({ ...getSnapshot(), reduceMotion: !getSnapshot().reduceMotion });
+  }, [commitWithSideEffects]);
 
-  const setTextSize = useCallback((ratio: number) => {
-    setSettings((prev) => ({ ...prev, textSize: ratio }));
-  }, []);
+  const setTextSize = useCallback(
+    (ratio: number) => {
+      commitWithSideEffects({ ...getSnapshot(), textSize: ratio });
+    },
+    [commitWithSideEffects],
+  );
 
   const value = useMemo<SettingsContextValue>(
     () => ({ settings, setTheme, toggleHighContrast, toggleReduceMotion, setTextSize }),

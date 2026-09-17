@@ -1,4 +1,5 @@
 import type { LatLng, MapFeatureReturn, MapLineFeature } from "@/types";
+import { FOCUS_CENTER } from "@/lib/geo";
 
 const OVERPASS_ENDPOINTS = [
   "https://overpass-api.de/api/interpreter",
@@ -99,7 +100,7 @@ export function bboxFromCenter(lat: number, lng: number, delta = 0.015): string 
 
 export function bboxFromPolyline(points: LatLng[], pad = 0.008): string {
   if (points.length === 0) {
-    return bboxFromCenter(-6.2003, 106.877);
+    return bboxFromCenter(FOCUS_CENTER.lat, FOCUS_CENTER.lng);
   }
   let minLat = Infinity;
   let maxLat = -Infinity;

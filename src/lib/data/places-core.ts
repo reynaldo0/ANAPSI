@@ -6,7 +6,7 @@ import {
   type DemoFeature,
   type DemoPlace,
 } from "@/lib/data/demo-data";
-import { haversineKm, distanceFrom, type LatLng } from "@/lib/geo";
+import { haversineKm, distanceFrom, focusOrigin, type LatLng } from "@/lib/geo";
 import { evaluateAccessibility, type FeatureEvidence } from "@/lib/scoring";
 import type {
   AccessibilityProfileType,
@@ -89,19 +89,17 @@ export function toSummary(place: DemoPlace, origin: LatLng | null): PlaceSummary
 export function demoPlacesFiltered(query: PlacesQuery, origin: LatLng | null): DemoPlace[] {
   const q = query.q?.trim().toLowerCase();
   const radiusKm = query.radiusKm ?? 3;
+  const effectiveOrigin = focusOrigin(origin);
   return demoPlaces
     .filter((place) => {
       if (q) {
         const haystack = `${place.name} ${place.address} ${place.city} ${place.category}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
-      if (origin && haversineKm(origin, place) > radiusKm) return false;
+      if (haversineKm(effectiveOrigin, place) > radiusKm) return false;
       return true;
     })
-    .sort((a, b) => {
-      if (origin) return haversineKm(origin, a) - haversineKm(origin, b);
-      return a.name.localeCompare(b.name);
-    });
+    .sort((a, b) => haversineKm(effectiveOrigin, a) - haversineKm(effectiveOrigin, b));
 }
 
 function scoreToLabel(score: number): string {
@@ -201,7 +199,7 @@ export function mockFeatures(profile: AccessibilityProfileType, origin: LatLng |
       : ["guiding_block", "pedestrian_crossing", "audio_crossing_signal", "obstacle", "surface_hazard"];
   return demoMapFeatures
     .filter((f) => kinds.includes(f.kind))
-    .map((f) => ({ f, d: origin ? haversineKm(origin, f) : 0 }))
+    .map((f) => ({ f, d: haversineKm(focusOrigin(origin), f) }))
     .sort((a, b) => a.d - b.d)
     .map(({ f }) => toFeature(f));
 }

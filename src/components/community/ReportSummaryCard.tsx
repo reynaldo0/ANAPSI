@@ -6,7 +6,14 @@ import { VerificationBadge } from "@/components/ui/VerificationBadge";
 import { reportCategoryLabel, severityLabel } from "@/lib/constants";
 import { relativeTime, reportConfidenceNote } from "@/lib/report-reliability";
 import { REPORT_STATUS_META } from "@/lib/report-status";
+import { cn } from "@/lib/cn";
 import type { ReportDetail } from "@/types";
+
+const SEVERITY_TONE: Record<ReportDetail["severity"], string> = {
+  HIGH: "border-danger/40 bg-danger-soft text-danger",
+  MEDIUM: "border-warning/40 bg-warning-soft text-warning",
+  LOW: "border-border bg-muted text-muted-foreground",
+};
 
 interface ReportSummaryCardProps {
   report: ReportDetail;
@@ -42,7 +49,9 @@ export function ReportSummaryCard({ report, distanceLabel }: ReportSummaryCardPr
       <dl className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-3 text-xs text-muted-foreground">
         <div className="flex items-center gap-1">
           <dt className="sr-only">Keparahan</dt>
-          <dd>{severityLabel(report.severity)}</dd>
+          <dd className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-black", SEVERITY_TONE[report.severity])}>
+            {severityLabel(report.severity)}
+          </dd>
         </div>
         {distanceLabel ? (
           <div className="flex items-center gap-1">
@@ -73,7 +82,7 @@ export function ReportSummaryCard({ report, distanceLabel }: ReportSummaryCardPr
 
       <Link
         href={`/report/${report.id}`}
-        className="mt-4 inline-flex items-center gap-1.5 rounded-12 border border-input px-4 py-2 text-sm font-medium hover:bg-muted"
+        className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-12 border-2 border-border bg-background px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:border-primary hover:bg-primary-soft hover:text-primary"
       >
         Lihat detail
         <ArrowRight className="h-4 w-4" aria-hidden="true" />

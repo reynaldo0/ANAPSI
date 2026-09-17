@@ -1,7 +1,7 @@
 import type { AccessibilityProfileType, AffectedProfile, ReportCategory, Severity } from "@/types";
 import { Accessibility, Eye, Sparkles, type LucideIcon } from "lucide-react";
 
-export const APP_NAME = "BLINDSPOT";
+export const APP_NAME = "ANAPSI";
 export const APP_TAGLINE = "Navigate Beyond Barriers";
 
 /** Pilihan pertama saat membuka aplikasi: nondisabilitas atau penyandang disabilitas. */

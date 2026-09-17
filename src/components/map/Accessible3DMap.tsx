@@ -1,11 +1,11 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Box, Layers3, Locate } from "lucide-react";
+import { Box, Layers3, Locate, Minus, Plus } from "lucide-react";
 import { announceLiveRegion } from "@/lib/announcement";
 import { useAudioManager } from "@/lib/audio/AudioManager";
 import { AudioPriority } from "@/types";
 import { cn } from "@/lib/cn";
-import type { LatLng } from "@/lib/geo";
+import { type LatLng, FOCUS_CENTER } from "@/lib/geo";
 import type { MapFeatureReturn, MapLineFeature, PlaceSummary } from "@/types";
 
 interface Props {
@@ -18,6 +18,8 @@ interface Props {
   onLocate: () => void;
   realtimeFeatures?: MapFeatureReturn[];
   tall?: boolean;
+  /** Titik dari hasil pencarian untuk diarahkan/difokus peta. */
+  focus?: { lat: number; lng: number; name: string } | null;
 }
 
 const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
@@ -45,7 +47,7 @@ function personMarkerSvg(color: string, size = 20): string {
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1"/><path d="m9 20 3-6 3 6"/><path d="m6 8 6 2 6-2"/><path d="M12 10v4"/></svg>`;
 }
 
-export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPlace, currentLocation, onLocate, realtimeFeatures, guidingLines = [], tall = false }: Props) {
+export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPlace, currentLocation, onLocate, realtimeFeatures, guidingLines = [], tall = false, focus = null }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<unknown>(null);
   const lineReadyRef = useRef(false);
@@ -53,6 +55,15 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
   const [is3D, setIs3D] = useState(true);
   const [terrainOn, setTerrainOn] = useState(true);
   const [loaded, setLoaded] = useState(false);
+
+  const zoomStep = (in_: boolean = true) => {
+    const m = mapRef.current as { zoomIn?: () => void; zoomOut?: () => void } | null;
+    if (!m) return;
+    try {
+      if (in_) m.zoomIn?.();
+      else m.zoomOut?.();
+    } catch {}
+  };
 
   /** Baca suara saat fitur / tempat diklik agar mudah diakses penyandang disabilitas. */
   const speakSelection = useCallback(
@@ -69,7 +80,7 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
       const maplibregl = await import("maplibre-gl");
       await import("maplibre-gl/dist/maplibre-gl.css");
       if (cancelled || !containerRef.current) return;
-      const center: [number, number] = currentLocation ? [currentLocation.lng, currentLocation.lat] : [106.877, -6.2003];
+      const center: [number, number] = currentLocation ? [currentLocation.lng, currentLocation.lat] : [FOCUS_CENTER.lng, FOCUS_CENTER.lat];
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const m: any = new (maplibregl as unknown as { Map: new (o: unknown) => unknown }).Map({
         container: containerRef.current,
@@ -78,11 +89,10 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
         zoom: 15,
         pitch: is3D ? 55 : 0,
         bearing: is3D ? -12 : 0,
-        attributionControl: true,
+        attributionControl: false,
         canvasContextAttributes: { antialias: true },
       });
       mapRef.current = m;
-      m.addControl(new (maplibregl as unknown as { NavigationControl: new (o: unknown)=>unknown }).NavigationControl({ showCompass: true }), "top-right");
       m.on("load", () => {
         try {
           // Terrain gratis global (AWS Open Data — Terrarium encoding)
@@ -113,6 +123,11 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
     if (!currentLocation || !loaded) return;
     try { (mapRef.current as { flyTo?: (o:unknown)=>void})?.flyTo?.({ center: [currentLocation.lng, currentLocation.lat], zoom: 16, duration: 1200 }); } catch {}
   }, [currentLocation, loaded]);
+
+  useEffect(() => {
+    if (!focus || !loaded) return;
+    try { (mapRef.current as { flyTo?: (o:unknown)=>void})?.flyTo?.({ center: [focus.lng, focus.lat], zoom: 16, duration: 1200 }); } catch {}
+  }, [focus, loaded]);
 
   // Render markers as HTML markers (accessible) via effect
   useEffect(() => {
@@ -237,20 +252,44 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
         style={{ background: "#e5e7eb" }}
       />
       {!loaded ? <div className="absolute inset-0 grid place-items-center bg-muted/60 text-sm text-muted-foreground">Memuat peta 3D gratis…</div> : null}
-      <div className="absolute bottom-3 left-3 hidden flex-wrap gap-2 md:flex">
-        <button type="button" onClick={() => setIs3D((v) => !v)} aria-pressed={is3D} aria-label={is3D ? "Matikan tampilan 3D" : "Aktifkan tampilan 3D"} className={`inline-flex h-11 items-center gap-2 rounded-12 border px-3 text-sm font-bold shadow-float ${is3D ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"}`}>
-          <Box className="h-4 w-4" aria-hidden="true" /> {is3D ? "3D Aktif" : "2D"}
-        </button>
-        <button type="button" onClick={() => setTerrainOn((v) => !v)} aria-pressed={terrainOn} aria-label="Toggle terrain 3D" className={`inline-flex h-11 items-center gap-2 rounded-12 border px-3 text-sm font-bold shadow-float ${terrainOn ? "bg-card border-border" : "bg-muted text-muted-foreground"}`}>
-          <Layers3 className="h-4 w-4" aria-hidden="true" /> Terrain
-        </button>
+      <div className="absolute bottom-3 left-3 flex items-end gap-2">
+        {loaded ? (
+          <div className="flex flex-col gap-2 rounded-12 border-2 border-border bg-background p-1 shadow-float">
+            <button
+              type="button"
+              aria-label="Perbesar peta"
+              title="Perbesar"
+              onClick={() => zoomStep()}
+              className="flex h-11 w-11 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Plus className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              aria-label="Perkecil peta"
+              title="Perkecil"
+              onClick={() => zoomStep(false)}
+              className="flex h-11 w-11 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Minus className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </div>
+        ) : null}
+        <div className="hidden flex-col gap-2 md:flex">
+          <button type="button" onClick={() => setIs3D((v) => !v)} aria-pressed={is3D} aria-label={is3D ? "Matikan tampilan 3D" : "Aktifkan tampilan 3D"} className={`inline-flex h-11 items-center gap-2 rounded-12 border px-3 text-sm font-bold shadow-float ${is3D ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"}`}>
+            <Box className="h-4 w-4" aria-hidden="true" /> {is3D ? "3D Aktif" : "2D"}
+          </button>
+          <button type="button" onClick={() => setTerrainOn((v) => !v)} aria-pressed={terrainOn} aria-label="Toggle terrain 3D" className={`inline-flex h-11 items-center gap-2 rounded-12 border px-3 text-sm font-bold shadow-float ${terrainOn ? "bg-card border-border" : "bg-muted text-muted-foreground"}`}>
+            <Layers3 className="h-4 w-4" aria-hidden="true" /> Terrain
+          </button>
+        </div>
       </div>
-      <div className="absolute bottom-3 right-3 flex flex-col gap-2">
+      <div className="absolute bottom-3 right-3 md:bottom-16">
         <button type="button" aria-label="Lokasi saya" onClick={onLocate} className="flex h-12 w-12 items-center justify-center rounded-12 border-2 border-border bg-background shadow-float hover:bg-muted">
           <Locate className="h-5 w-5" aria-hidden="true" />
         </button>
       </div>
-      <p className="sr-only" role="status">Peta 3D gratis OpenFreeMap aktif. Semua pin juga tersedia sebagai daftar teks yang dapat diakses keyboard di bawah peta.</p>
+      <p className="sr-only" role="status">Peta 3D aktif. Semua pin juga tersedia sebagai daftar teks yang dapat diakses keyboard di bawah peta.</p>
     </div>
   );
 }

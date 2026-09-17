@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useStoredValue } from "@/lib/state/useStoredValue";
 
 const STORAGE_KEY = "blindspot:sign-language";
 
@@ -22,10 +23,12 @@ function loadStored(): boolean {
 }
 
 export function SignLanguageProvider({ children }: { children: ReactNode }) {
-  const [enabled, setEnabled] = useState(false);
+  const stored = useStoredValue(loadStored, false);
+  const [override, setOverride] = useState<boolean | null>(null);
+  const enabled = override ?? stored;
 
-  useEffect(() => {
-    setEnabled(loadStored());
+  const setEnabled = useCallback((value: boolean) => {
+    setOverride(value);
   }, []);
 
   useEffect(() => {
@@ -37,8 +40,8 @@ export function SignLanguageProvider({ children }: { children: ReactNode }) {
   }, [enabled]);
 
   const value = useMemo<SignLanguageContextValue>(
-    () => ({ enabled, setEnabled, toggle: () => setEnabled((v) => !v) }),
-    [enabled],
+    () => ({ enabled, setEnabled, toggle: () => setEnabled(!enabled) }),
+    [enabled, setEnabled],
   );
 
   return <SignLanguageContext.Provider value={value}>{children}</SignLanguageContext.Provider>;
