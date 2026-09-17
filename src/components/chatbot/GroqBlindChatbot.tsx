@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/Input";
 import { useAudioManager } from "@/lib/audio/AudioManager";
 import { useSpeechRecognition, type VoiceCopy } from "@/lib/voice/useSpeechRecognition";
 import { announceLiveRegion } from "@/lib/announcement";
+import { useSignLanguage } from "@/lib/state/SignLanguageContext";
+import { SignLanguagePanel } from "@/components/sign-language/SignLanguagePanel";
+import { SignLanguageToggle } from "@/components/sign-language/SignLanguageToggle";
 import { AudioPriority } from "@/types";
 import { cn } from "@/lib/cn";
 
@@ -22,6 +25,7 @@ type ChatMsg = { role: "user" | "assistant"; content: string };
 export function GroqBlindChatbot() {
   const audio = useAudioManager();
   const voice = useSpeechRecognition(VOICE_COPY);
+  const sign = useSignLanguage();
   const [input, setInput] = useState("");
   const [history, setHistory] = useState<ChatMsg[]>([
     { role: "assistant", content: "Halo! Saya teman ngobrol BLINDSPOT khusus tunanetra, didukung Groq. Bicara atau ketik — saya jawab singkat dan bisa dibacakan. Mau cari tempat, cek hambatan, atau laporkan?" },
@@ -125,6 +129,7 @@ export function GroqBlindChatbot() {
             <input type="checkbox" checked={useGroqSTT} onChange={(e) => setUseGroqSTT(e.target.checked)} className="h-4 w-4 accent-primary" /> Groq Whisper STT
           </label>
           <Button variant="ghost" size="sm" onClick={() => { setHistory((h) => h.slice(0, 1)); audio.stop(); }}><Trash2 className="h-4 w-4" /> Bersihkan</Button>
+          <SignLanguageToggle />
         </div>
         {!process.env.NEXT_PUBLIC_GROQ_CONFIGURED ? <p className="mt-2 rounded-10 bg-warning-soft px-3 py-2 text-xs font-medium text-warning">Tips: set <code>GROQ_API_KEY</code> di .env untuk aktifkan Groq. Tanpa key, chatbot tetap jalan dengan fallback data BLINDSPOT.</p> : null}
       </header>
@@ -139,6 +144,13 @@ export function GroqBlindChatbot() {
         ))}
         {loading ? <p className="self-start rounded-12 bg-card px-4 py-2 text-sm text-muted-foreground" aria-live="polite">Mengetik…</p> : null}
       </div>
+
+      {sign.enabled ? (
+        (() => {
+          const last = [...history].reverse().find((m) => m.role === "assistant");
+          return last ? <SignLanguagePanel title="Jawaban chatbot" text={last.content} /> : null;
+        })()
+      ) : null}
 
       <form onSubmit={(e) => { e.preventDefault(); void send(input); }} className="flex gap-2" aria-label="Kirim pesan ke chatbot">
         <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Ketik atau bicara..." aria-label="Pesan untuk chatbot" className="flex-1" />

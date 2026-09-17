@@ -7,6 +7,7 @@ import { GamificationProvider } from "@/lib/state/GamificationContext";
 import { ProfileProvider } from "@/lib/state/ProfileContext";
 import { ReducedMotionProvider } from "@/lib/state/ReducedMotionProvider";
 import { SettingsProvider } from "@/lib/state/SettingsContext";
+import { SignLanguageProvider } from "@/lib/state/SignLanguageContext";
 import { ToastProvider } from "@/components/ui/Toast";
 
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -17,7 +18,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
           <AuthProvider>
             <AudioProvider>
               <ProfileProvider>
-                <GamificationProvider>{children}</GamificationProvider>
+                <GamificationProvider>
+                  <SignLanguageProvider>{children}</SignLanguageProvider>
+                </GamificationProvider>
               </ProfileProvider>
             </AudioProvider>
           </AuthProvider>

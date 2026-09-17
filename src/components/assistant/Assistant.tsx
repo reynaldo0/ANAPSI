@@ -12,6 +12,9 @@ import { announceLiveRegion } from "@/lib/announcement";
 import { useAudioManager } from "@/lib/audio/AudioManager";
 import { useSpeechRecognition, type VoiceCopy } from "@/lib/voice/useSpeechRecognition";
 import { useAccessibilityProfile } from "@/lib/state/ProfileContext";
+import { useSignLanguage } from "@/lib/state/SignLanguageContext";
+import { SignLanguagePanel } from "@/components/sign-language/SignLanguagePanel";
+import { SignLanguageToggle } from "@/components/sign-language/SignLanguageToggle";
 import { verificationLabel } from "@/lib/verification";
 import type {
   AssistantAnswer,
@@ -59,6 +62,7 @@ export function Assistant() {
   const { activeProfile } = useAccessibilityProfile();
   const audio = useAudioManager();
   const voice = useSpeechRecognition(VOICE_COPY);
+  const sign = useSignLanguage();
 
   const [input, setInput] = useState("");
   const [question, setQuestion] = useState<string | null>(null);
@@ -137,14 +141,19 @@ export function Assistant() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="flex items-center gap-2 text-h2 font-black">
-          <Sparkles className="h-6 w-6 text-primary" aria-hidden="true" />
-          Tanya Asisten
-        </h1>
-        <p className="mt-1 text-muted-foreground">
-          Jawaban berasal dari data BLINDSPOT dan tidak mengarang kondisi aksesibilitas. Contoh pertanyaan:{" "}
-          <em>&quot;Apakah tempat ini aksesibel untuk kursi roda?&quot;</em>
-        </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="flex items-center gap-2 text-h2 font-black">
+              <Sparkles className="h-6 w-6 text-primary" aria-hidden="true" />
+              Tanya Asisten
+            </h1>
+            <p className="mt-1 text-muted-foreground">
+              Jawaban berasal dari data BLINDSPOT dan tidak mengarang kondisi aksesibilitas. Contoh pertanyaan:{" "}
+              <em>&quot;Apakah tempat ini aksesibel untuk kursi roda?&quot;</em>
+            </p>
+          </div>
+          <SignLanguageToggle />
+        </div>
       </header>
 
       <section aria-label="Tulis pertanyaan" className="rounded-20 border-2 border-border bg-card p-4 shadow-card">
@@ -287,6 +296,13 @@ export function Assistant() {
             ) : null}
           </div>
         </section>
+      ) : null}
+
+      {sign.enabled && answer ? (
+        <SignLanguagePanel
+          title="Jawaban asisten"
+          text={[answer.answerText, ...answer.bullets].join(". ")}
+        />
       ) : null}
     </div>
   );

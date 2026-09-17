@@ -11,6 +11,8 @@ import { useToast } from "@/components/ui/Toast";
 import { TourTrigger } from "@/components/tutorial/TourTrigger";
 import { useAuth } from "@/lib/state/AuthContext";
 import { useGamification } from "@/lib/state/GamificationContext";
+import { useSignLanguage } from "@/lib/state/SignLanguageContext";
+import { SignLanguagePanel } from "@/components/sign-language/SignLanguagePanel";
 import { badgeById } from "@/lib/gamification-defs";
 import { useSpeechRecognition } from "@/lib/voice/useSpeechRecognition";
 import { structureReportTranscript } from "@/lib/voice/report-structurer";
@@ -89,6 +91,7 @@ export function ReportFlow() {
   const [earned, setEarned] = useState<{ points: number; badges: string[] } | null>(null);
 
   const speech = useSpeechRecognition();
+  const sign = useSignLanguage();
 
   useEffect(() => {
     headingRef.current?.focus();
@@ -322,6 +325,13 @@ export function ReportFlow() {
             </Button>
           </div>
         </div>
+        {sign.enabled ? (
+          <SignLanguagePanel
+            title="Status laporan"
+            text="Laporan berhasil dikirim. Terima kasih telah membantu menjaga informasi aksesibilitas tetap terbarui."
+            className="mt-4"
+          />
+        ) : null}
         {created.source === "user" ? (
           <p className="mt-4 text-sm text-muted-foreground">
             Catatan pengembangan: laporan baru tersimpan di memori server demo dan akan hilang saat server dimatikan.

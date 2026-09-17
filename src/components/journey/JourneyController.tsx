@@ -27,6 +27,9 @@ import { LoadingState } from "@/components/ui/LoadingState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { useSpeechRecognition, type VoiceCopy } from "@/lib/voice/useSpeechRecognition";
 import { useAccessibilityProfile } from "@/lib/state/ProfileContext";
+import { useSignLanguage } from "@/lib/state/SignLanguageContext";
+import { SignLanguagePanel } from "@/components/sign-language/SignLanguagePanel";
+import { SignLanguageToggle } from "@/components/sign-language/SignLanguageToggle";
 import { AudioPriority, type RouteOption } from "@/types";
 import { JourneyMap } from "@/components/journey/JourneyMap";
 import { cn } from "@/lib/cn";
@@ -58,6 +61,7 @@ export function JourneyController() {
   const { activeProfile } = useAccessibilityProfile();
   const audio = useAudioManager();
   const voice = useSpeechRecognition(VOICE_COPY);
+  const sign = useSignLanguage();
 
   const routeParam = searchParams.get("route");
   const destinationParam = searchParams.get("destination");
@@ -328,6 +332,7 @@ export function JourneyController() {
             <Badge tone={realStreet ? "success" : "neutral"} symbol={realStreet ? "🛣" : "◇"}>
               {realStreet ? "Rute mengikuti jalan nyata" : "Rute estimasi demo"}
             </Badge>
+            <SignLanguageToggle className="hidden md:inline-flex" />
           </div>
 
           <div>
@@ -400,6 +405,23 @@ export function JourneyController() {
               </>
             )}
           </section>
+
+          {sign.enabled ? (
+            <SignLanguagePanel
+              title="Instruksi navigasi"
+              text={
+                isArrival
+                  ? `Kamu sudah tiba di tujuan: ${selected.toName}.`
+                  : [
+                      currentStep?.instruction,
+                      currentStep?.barrierLabel,
+                      currentStep?.facilityLabel,
+                    ]
+                      .filter(Boolean)
+                      .join(". ")
+              }
+            />
+          ) : null}
 
           <div className="flex flex-wrap items-center gap-3">
             <Button variant="primary" size="lg" onClick={repeatInstruction} aria-label="Ulangi instruksi, tombol besar 48px" className="h-14 text-lg font-black">
