@@ -50,7 +50,12 @@ export default function ReportDetailPage() {
         }
         const body = (await response.json()) as ReportResponse;
         if (!cancelled) {
-          setReport(body.data.report);
+          setReport({
+            ...body.data.report,
+            affectedProfiles: body.data.report.affectedProfiles ?? [],
+            media: body.data.report.media ?? [],
+            verifications: body.data.report.verifications ?? [],
+          });
           setSource(body.data.source);
         }
       } catch {
