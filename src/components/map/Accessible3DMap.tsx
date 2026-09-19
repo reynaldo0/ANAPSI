@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Box, Layers3, Locate, Minus, Plus } from "lucide-react";
+import { Box, Compass, Layers3, Locate, Minus, MoveDown, MoveLeft, MoveRight, MoveUp, Plus } from "lucide-react";
 import { announceLiveRegion } from "@/lib/announcement";
 import { useAudioManager } from "@/lib/audio/AudioManager";
 import { AudioPriority } from "@/types";
@@ -64,6 +64,52 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
       else m.zoomOut?.();
     } catch {}
   };
+
+  const panStep = useCallback(() => {
+    const w = containerRef.current?.clientWidth ?? 360;
+    return Math.max(140, Math.min(320, Math.round(w * 0.34)));
+  }, []);
+
+  /** Geser peta (tanpa gesture) — negasi sesuai implementasi maplibre: panBy({x,y}) = lihat arah {x:barat, y:utara}. */
+  const panMap = useCallback(
+    (dx: number, dy: number) => {
+      const m = mapRef.current as { panBy?: (o: { x: number; y: number }, opts?: { duration?: number }) => void } | null;
+      if (!m || !loaded) return;
+      try {
+        m.panBy?.({ x: dx, y: dy }, { duration: 220 });
+        const dir = dx > 0 ? "barat" : dx < 0 ? "timur" : dy > 0 ? "utara" : "selatan";
+        announceLiveRegion(`Peta digeser ke ${dir}.`);
+      } catch {}
+    },
+    [loaded],
+  );
+
+  const resetNorth = useCallback(() => {
+    const m = mapRef.current as { resetNorth?: () => void; easeTo?: (o: unknown) => void } | null;
+    if (!m || !loaded) return;
+    try {
+      m.resetNorth?.();
+      m.easeTo?.({ pitch: is3D ? 55 : 0, bearing: is3D ? -12 : 0, duration: 600 });
+      announceLiveRegion("Arah peta dikembalikan ke utara.", { assertive: true });
+    } catch {}
+  }, [loaded, is3D]);
+
+  /** Tombol panah keyboard di dalam peta — gantikan gesture geser untuk pengguna yang tidak bisa geser. */
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) return;
+      event.preventDefault();
+      const step = panStep();
+      if (event.key === "ArrowUp") panMap(0, step);
+      else if (event.key === "ArrowDown") panMap(0, -step);
+      else if (event.key === "ArrowLeft") panMap(step, 0);
+      else panMap(-step, 0);
+    };
+    el.addEventListener("keydown", onKey, true);
+    return () => el.removeEventListener("keydown", onKey, true);
+  }, [panMap, panStep]);
 
   /** Baca suara saat fitur / tempat diklik agar mudah diakses penyandang disabilitas. */
   const speakSelection = useCallback(
@@ -247,44 +293,132 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
       <div
         ref={containerRef}
         role="application"
-        aria-label="Peta 3D interaktif gratis. Geser, cubit zoom, putar 2 jari untuk 3D. Bagi tunanetra, gunakan daftar tempat di bawah peta sebagai alternatif utama."
+        tabIndex={0}
+        aria-label="Peta 3D interaktif gratis. Tombol panah di kanan atas mengarahkan arah peta. Cubit zoom, putar 2 jari untuk 3D. Tombol panah keyboard juga menggerakkan peta. Bagi tunanetra, gunakan daftar tempat di bawah peta sebagai alternatif utama."
         className={tall ? "h-full w-full" : "h-[420px] w-full sm:h-[560px]"}
         style={{ background: "#e5e7eb" }}
       />
       {!loaded ? <div className="absolute inset-0 grid place-items-center bg-muted/60 text-sm text-muted-foreground">Memuat peta 3D gratis…</div> : null}
-      <div className="absolute bottom-3 left-3 flex items-end gap-2">
+
+      {/* Dock gerakan (arah) — pojok KANAN ATAS, di bawah tombol "Mau ke mana?" */}
+      <div
+        className={cn(
+          "absolute z-10",
+          "right-2 top-[calc(12rem+env(safe-area-inset-top,0px))] sm:top-[calc(12.25rem+env(safe-area-inset-top,0px))]",
+          "md:left-3 md:right-auto md:top-auto md:bottom-3",
+        )}
+      >
         {loaded ? (
-          <div className="flex flex-col gap-2 rounded-12 border-2 border-border bg-background p-1 shadow-float">
+          <div className="grid grid-cols-3 gap-1 rounded-12 border-2 border-border bg-background p-2 shadow-float">
+            <span aria-hidden="true" />
             <button
               type="button"
-              aria-label="Perbesar peta"
-              title="Perbesar"
-              onClick={() => zoomStep()}
+              aria-label="Arahkan peta ke utara"
+              onClick={() => panMap(0, panStep())}
               className="flex h-11 w-11 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <Plus className="h-5 w-5" aria-hidden="true" />
+              <MoveUp className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <span aria-hidden="true" />
+            <button
+              type="button"
+              aria-label="Arahkan peta ke barat"
+              onClick={() => panMap(panStep(), 0)}
+              className="flex h-11 w-11 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <MoveLeft className="h-5 w-5" aria-hidden="true" />
             </button>
             <button
               type="button"
-              aria-label="Perkecil peta"
-              title="Perkecil"
-              onClick={() => zoomStep(false)}
+              aria-label="Kembalikan arah peta ke utara"
+              onClick={resetNorth}
+              title="Arah utara"
               className="flex h-11 w-11 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <Minus className="h-5 w-5" aria-hidden="true" />
+              <Compass className="h-5 w-5" aria-hidden="true" />
             </button>
+            <button
+              type="button"
+              aria-label="Arahkan peta ke timur"
+              onClick={() => panMap(-panStep(), 0)}
+              className="flex h-11 w-11 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <MoveRight className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <span aria-hidden="true" />
+            <button
+              type="button"
+              aria-label="Arahkan peta ke selatan"
+              onClick={() => panMap(0, -panStep())}
+              className="flex h-11 w-11 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <MoveDown className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <span aria-hidden="true" />
           </div>
         ) : null}
-        <div className="flex flex-col gap-2">
-          <button type="button" onClick={() => setIs3D((v) => !v)} aria-pressed={is3D} aria-label={is3D ? "Matikan tampilan 3D" : "Aktifkan tampilan 3D"} className={`inline-flex h-11 items-center gap-2 rounded-12 border px-3 text-sm font-bold shadow-float ${is3D ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"}`}>
-            <Box className="h-4 w-4" aria-hidden="true" /> {is3D ? "3D Aktif" : "2D"}
-          </button>
-          <button type="button" onClick={() => setTerrainOn((v) => !v)} aria-pressed={terrainOn} aria-label="Toggle terrain 3D" className={`inline-flex h-11 items-center gap-2 rounded-12 border px-3 text-sm font-bold shadow-float ${terrainOn ? "bg-card border-border" : "bg-muted text-muted-foreground"}`}>
-            <Layers3 className="h-4 w-4" aria-hidden="true" /> Terrain
-          </button>
-        </div>
       </div>
-      <div className="absolute bottom-3 right-3 md:bottom-16">
+
+      {/* Dock utilitas — kiri bawah (di atas panel bawah mobile) */}
+<div
+        className={cn(
+          "absolute right-3 z-10",
+          "bottom-[calc(10rem+env(safe-area-inset-bottom,0px))]",
+          "md:bottom-16",
+        )}
+      >
+        {loaded ? (
+          <div className="flex flex-col gap-2 rounded-12 border-2 border-border bg-background p-2 shadow-float">
+            <div className="flex justify-center gap-2">
+              <button
+                type="button"
+                aria-label="Perbesar peta"
+                title="Perbesar"
+                onClick={() => zoomStep()}
+                className="flex h-11 w-11 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <Plus className="h-5 w-5" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                aria-label="Perkecil peta"
+                title="Perkecil"
+                onClick={() => zoomStep(false)}
+                className="flex h-11 w-11 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <Minus className="h-5 w-5" aria-hidden="true" />
+              </button>
+            </div>
+            <div className="flex justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIs3D((v) => !v)}
+                aria-pressed={is3D}
+                aria-label={is3D ? "Matikan tampilan 3D" : "Aktifkan tampilan 3D"}
+                className={`inline-flex h-11 items-center gap-2 rounded-12 border px-3 text-sm font-bold shadow-float ${is3D ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"}`}
+              >
+                <Box className="h-4 w-4" aria-hidden="true" /> {is3D ? "3D Aktif" : "2D"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setTerrainOn((v) => !v)}
+                aria-pressed={terrainOn}
+                aria-label="Toggle terrain 3D"
+                className={`inline-flex h-11 items-center gap-2 rounded-12 border px-3 text-sm font-bold shadow-float ${terrainOn ? "bg-card border-border" : "bg-muted text-muted-foreground"}`}
+              >
+                <Layers3 className="h-4 w-4" aria-hidden="true" /> Terrain
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+      <div
+        className={cn(
+          "absolute right-3 z-10",
+          "bottom-[calc(10rem+env(safe-area-inset-bottom,0px))]",
+          "md:bottom-16",
+        )}
+      >
         <button type="button" aria-label="Lokasi saya" onClick={onLocate} className="flex h-12 w-12 items-center justify-center rounded-12 border-2 border-border bg-background shadow-float hover:bg-muted">
           <Locate className="h-5 w-5" aria-hidden="true" />
         </button>
