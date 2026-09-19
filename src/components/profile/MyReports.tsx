@@ -10,6 +10,8 @@ import { announceLiveRegion } from "@/lib/announcement";
 import { reportCategoryLabel } from "@/lib/constants";
 import { REPORT_STATUS_META } from "@/lib/report-status";
 import { relativeTime } from "@/lib/report-reliability";
+import { useAutoRefresh } from "@/lib/useAutoRefresh";
+import { useOnlineStatus } from "@/lib/useOnlineStatus";
 import { useAuth } from "@/lib/state/AuthContext";
 import type { ReportDetail } from "@/types";
 
@@ -22,14 +24,16 @@ export function MyReports() {
   const { user } = useAuth();
   const [reports, setReports] = useState<ReportDetail[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const online = useOnlineStatus();
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (announce = false) => {
     try {
       const response = await fetch("/api/reports?mine=true", { cache: "no-store" });
       if (!response.ok) throw new Error("Gagal memuat laporan.");
       const body = (await response.json()) as ReportsResponse;
       setReports(body.data.reports);
-      announceLiveRegion(`${body.data.reports.length} laporan milikmu dimuat.`);
+      setError(null);
+      if (announce) announceLiveRegion(`${body.data.reports.length} laporan milikmu dimuat.`);
     } catch {
       setError("Tidak dapat memuat laporan. Coba lagi.");
     }
@@ -39,13 +43,16 @@ export function MyReports() {
     let cancelled = false;
     async function run() {
       if (cancelled) return;
-      await load();
+      await load(true);
     }
     void run();
     return () => {
       cancelled = true;
     };
   }, [load]);
+
+  // Status laporanmu bisa berubah oleh admin/verifikator: segarkan senyap tiap 60 detik.
+  useAutoRefresh(() => void load(false), 60_000, online);
 
   if (!user) {
     return (

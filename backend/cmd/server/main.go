@@ -39,7 +39,9 @@ func main() {
 		ReadTimeout:       35 * time.Second,
 		WriteTimeout:      60 * time.Second,
 		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    1 << 20, // 1 MB — blocks oversized header floods
 	}
+	srv.RegisterOnShutdown(database.Close)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

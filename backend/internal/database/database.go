@@ -16,20 +16,35 @@ import (
 // before the HTTP server starts.
 var DB *sql.DB
 
-// Ensure opens the MySQL connection pool and verifies connectivity.
+// Ensure opens the MySQL connection pool and verifies connectivity. Pool sizes
+// come from config so ops can tune them per VPS without a rebuild.
 func Ensure(cfg *config.Config) error {
 	conn, err := sql.Open("mysql", cfg.MySQLDSN)
 	if err != nil {
 		return err
 	}
-	conn.SetMaxOpenConns(20)
-	conn.SetMaxIdleConns(5)
-	conn.SetConnMaxLifetime(5 * time.Minute)
+	if cfg.DBMaxOpen > 0 {
+		conn.SetMaxOpenConns(cfg.DBMaxOpen)
+	}
+	if cfg.DBMaxIdle > 0 {
+		conn.SetMaxIdleConns(cfg.DBMaxIdle)
+	}
+	if cfg.DBConnLifetimeSeconds > 0 {
+		conn.SetConnMaxLifetime(time.Duration(cfg.DBConnLifetimeSeconds) * time.Second)
+	}
+	conn.SetConnMaxIdleTime(time.Minute)
 	if err := conn.Ping(); err != nil {
 		return fmt.Errorf("ping mysql: %w", err)
 	}
 	DB = conn
 	return nil
+}
+
+// Close releases the connection pool on graceful shutdown.
+func Close() {
+	if DB != nil {
+		_ = DB.Close()
+	}
 }
 
 // LoadMemoryCache seeds and loads the in-memory demo catalog used by the

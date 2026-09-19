@@ -1,0 +1,25 @@
+node_modules
+.next
+out
+.turbo
+coverage
+.data
+tsconfig.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+*.tsbuildinfo
+
+# VPS/secret material
+.env
+.env.*
+.env.local
+!deploy/.env.example
+auth-secret
+
+# Local toolchain
+backend/backend.exe
+backend/backend.exe~
+backend/*.test
+*.log
+.git
+.gitignore

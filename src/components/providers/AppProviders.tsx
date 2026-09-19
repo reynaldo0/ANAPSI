@@ -9,6 +9,7 @@ import { ReducedMotionProvider } from "@/lib/state/ReducedMotionProvider";
 import { SettingsProvider } from "@/lib/state/SettingsContext";
 import { SignLanguageProvider } from "@/lib/state/SignLanguageContext";
 import { ToastProvider } from "@/components/ui/Toast";
+import { ServiceWorkerProvider } from "@/components/providers/ServiceWorkerProvider";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
@@ -19,7 +20,10 @@ export function AppProviders({ children }: { children: ReactNode }) {
             <AudioProvider>
               <ProfileProvider>
                 <GamificationProvider>
-                  <SignLanguageProvider>{children}</SignLanguageProvider>
+                  <SignLanguageProvider>
+                    <ServiceWorkerProvider />
+                    {children}
+                  </SignLanguageProvider>
                 </GamificationProvider>
               </ProfileProvider>
             </AudioProvider>

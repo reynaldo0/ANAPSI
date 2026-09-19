@@ -10,6 +10,7 @@ import {
   Map,
   Megaphone,
   Settings,
+  ShieldCheck,
   Sparkles,
   User,
   UserPlus,
@@ -100,6 +101,30 @@ const pathname = usePathname();
         </ul>
 
         <div className="space-y-2 border-t border-border/60 p-3">
+          {user?.role === "ADMIN" ? (
+            <Link
+              href="/admin"
+              aria-label="Dashboard admin"
+              className={cn(
+                "flex items-center gap-3 rounded-12 px-3 py-2.5 transition-colors",
+                isActive(pathname, "/admin")
+                  ? "bg-primary-soft text-foreground"
+                  : "border-2 border-primary/30 bg-primary/5 text-foreground hover:bg-primary-soft",
+              )}
+            >
+              <span
+                aria-hidden="true"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-10 border border-border/60 bg-background/60 text-primary"
+              >
+                <ShieldCheck className="h-4 w-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="label-uppercase block text-[10px] text-primary">Peran admin</span>
+                <span className="block truncate text-sm font-bold">Dashboard Admin</span>
+              </span>
+            </Link>
+          ) : null}
+
           {profileMeta ? (
             <Link
               href="/onboarding"
@@ -130,8 +155,13 @@ const pathname = usePathname();
 
           {loading ? null : user ? (
             <div className="flex items-center justify-between gap-2 rounded-12 border border-border/60 bg-background/60 px-3 py-2">
-              <Link href="/profile" className="min-w-0 truncate text-sm font-bold hover:text-primary">
-                {user.displayName}
+              <Link href="/profile" className="flex min-w-0 items-center gap-2">
+                <span className="min-w-0 truncate text-sm font-bold hover:text-primary">{user.displayName}</span>
+                {user.role === "ADMIN" ? (
+                  <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-primary">
+                    Admin
+                  </span>
+                ) : null}
               </Link>
               <button
                 type="button"

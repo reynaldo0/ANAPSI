@@ -37,8 +37,13 @@ import { summaryScore } from "@/lib/data/places-core";
 import { useAccessibilityProfile } from "@/lib/state/ProfileContext";
 import { cn } from "@/lib/cn";
 import { FOCUS_CENTER, FOCUS_REGION_LABEL, isOutsideFocus, type LatLng } from "@/lib/geo";
-import type { MapFeatureReturn, MapLineFeature, PlaceSummary } from "@/types";
-import type { GeoSuggestion } from "@/app/api/geo/suggest/route";
+import type {
+  AccessibilityProfileType,
+  GeoSuggestion,
+  MapFeatureReturn,
+  MapLineFeature,
+  PlaceSummary,
+} from "@/types";
 
 interface PlacesResponse {
   ok: boolean;
@@ -171,9 +176,14 @@ export function MapPageController() {
   };
 
   const loadPlaces = useCallback(
-    async (q: string, asOfOrigin: LatLng | null) => {
+    async (q: string, asOfOrigin: LatLng | null, profile: AccessibilityProfileType | null) => {
       try {
-        const url = `/api/places${toQuery({ q: q || undefined, lat: asOfOrigin?.lat, lng: asOfOrigin?.lng })}`;
+        const url = `/api/places${toQuery({
+          q: q || undefined,
+          lat: asOfOrigin?.lat,
+          lng: asOfOrigin?.lng,
+          profile: profile ?? undefined,
+        })}`;
         const response = await fetch(url, { cache: "no-store" });
         if (!response.ok) throw new Error("Gagal memuat data tempat.");
         const body = (await response.json()) as PlacesResponse;
@@ -197,7 +207,9 @@ export function MapPageController() {
     async (profile: typeof activeProfile) => {
       if (!profile) return;
       try {
-        const response = await fetch(`/api/map/features?profile=${profile}`, { cache: "no-store" });
+        const response = await fetch(`/api/map/features?profile=${profile}&includeReports=1`, {
+          cache: "no-store",
+        });
         if (!response.ok) throw new Error("Gagal memuat fitur peta.");
         const body = (await response.json()) as FeaturesResponse;
         setFeatures(body.data.features);
@@ -214,13 +226,13 @@ export function MapPageController() {
     let cancelled = false;
     async function run() {
       if (cancelled) return;
-      await loadPlaces(submittedQuery, origin);
+      await loadPlaces(submittedQuery, origin, activeProfile);
     }
     void run();
     return () => {
       cancelled = true;
     };
-  }, [loadPlaces, submittedQuery, origin]);
+  }, [loadPlaces, submittedQuery, origin, activeProfile]);
 
   useEffect(() => {
     let cancelled = false;

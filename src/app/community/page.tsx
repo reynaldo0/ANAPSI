@@ -2,19 +2,41 @@ import type { Metadata } from "next";
 import { BadgeCheck, Clock3, FileText, HeartHandshake, MapIcon, Megaphone } from "lucide-react";
 import Link from "next/link";
 import { CommunityFeed } from "@/components/community/CommunityFeed";
-import { listReports } from "@/lib/data/reports";
+import type { ReportStub } from "@/types";
 
 export const metadata: Metadata = { title: "Komunitas" };
 
-export default async function CommunityPage() {
-  const { data } = await listReports();
-  const verified = data.filter((r) => r.status === "VERIFIED").length;
-  const inProgress = data.filter((r) => r.status === "PENDING" || r.status === "ACTIVE").length;
+const BACKEND_URL = process.env.BACKEND_URL ?? "http://127.0.0.1:8080";
 
-  const stats = [
-    { icon: FileText, value: data.length, label: "Laporan masuk" },
-    { icon: BadgeCheck, value: verified, label: "Terverifikasi" },
-    { icon: Clock3, value: inProgress, label: "Sedang ditindaklanjuti" },
+async function fetchReportStats(): Promise<{ total: number; verified: number; inProgress: number }> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/reports`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!response.ok) return { total: 0, verified: 0, inProgress: 0 };
+    const body = (await response.json()) as {
+      ok: boolean;
+      data?: { reports: ReportStub[] };
+    };
+    const reports = body.data?.reports ?? [];
+    return {
+      total: reports.length,
+      verified: reports.filter((r) => r.status === "VERIFIED").length,
+      inProgress: reports.filter((r) => r.status === "PENDING" || r.status === "ACTIVE").length,
+    };
+  } catch {
+    return { total: 0, verified: 0, inProgress: 0 };
+  }
+}
+
+export default async function CommunityPage() {
+  const stats = await fetchReportStats();
+
+  const statCards = [
+    { icon: FileText, value: stats.total, label: "Laporan masuk" },
+    { icon: BadgeCheck, value: stats.verified, label: "Terverifikasi" },
+    { icon: Clock3, value: stats.inProgress, label: "Sedang ditindaklanjuti" },
   ];
 
   return (
@@ -35,7 +57,7 @@ export default async function CommunityPage() {
             </span>
           </div>
           <ul className="mt-5 grid grid-cols-3 gap-2 sm:gap-3">
-            {stats.map((stat) => (
+            {statCards.map((stat) => (
               <li key={stat.label} className="rounded-16 bg-white/10 px-2 py-3 text-center">
                 <stat.icon className="mx-auto h-5 w-5 text-white/80" aria-hidden="true" />
                 <p className="mt-1 text-h3 font-black">{stat.value}</p>

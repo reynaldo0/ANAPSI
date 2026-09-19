@@ -77,6 +77,11 @@ type ReportFilters struct {
 	Mine     bool
 	Profile  string
 	AuthorID *string
+	Status   string
+	Category string
+	Severity string
+	Limit    int
+	Offset   int
 }
 
 // SubmitReportInput is the validated input for creating a report.
@@ -135,13 +140,36 @@ func ListReports(filters ReportFilters) ([]ReportDetail, string, error) {
 		where += " AND r.affectedProfiles LIKE ?"
 		args = append(args, "%"+filters.Profile+"%")
 	}
+	if filters.Status != "" {
+		where += " AND r.status = ?"
+		args = append(args, filters.Status)
+	}
+	if filters.Category != "" {
+		where += " AND r.category = ?"
+		args = append(args, filters.Category)
+	}
+	if filters.Severity != "" {
+		where += " AND r.severity = ?"
+		args = append(args, filters.Severity)
+	}
+	limit := filters.Limit
+	if limit <= 0 {
+		limit = 50
+	}
+	if limit > 200 {
+		limit = 200
+	}
+	if filters.Offset < 0 {
+		filters.Offset = 0
+	}
 	query := `SELECT r.id, r.category, r.body, r.severity, r.affectedProfiles, r.aiGenerated,
 		r.latitude, r.longitude, r.status, r.moderationNotes, r.createdAt, r.updatedAt,
 		r.placeId, r.authorId, p.name, p.address, p.city, u.displayName
 		FROM accessibility_reports r
 		LEFT JOIN places p ON p.id = r.placeId
 		LEFT JOIN users u ON u.id = r.authorId
-		WHERE ` + where + ` ORDER BY r.createdAt DESC LIMIT 50`
+		WHERE ` + where + ` ORDER BY r.createdAt DESC, r.id DESC LIMIT ? OFFSET ?`
+	args = append(args, limit, filters.Offset)
 	rows, err := database.DB.Query(query, args...)
 	if err != nil {
 		return nil, "", err

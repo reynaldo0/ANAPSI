@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAutoRefresh } from "@/lib/useAutoRefresh";
+import { useOnlineStatus } from "@/lib/useOnlineStatus";
 import { MapPin, PencilLine } from "lucide-react";
 import { announceLiveRegion } from "@/lib/announcement";
 import { REPORT_STATUS_META } from "@/lib/report-status";
@@ -48,29 +50,37 @@ export function CommunityFeed() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const online = useOnlineStatus();
+
+  const load = useCallback(async (announce = false) => {
+    try {
+      const response = await fetch("/api/reports", { cache: "no-store" });
+      if (!response.ok) throw new Error("Gagal memuat laporan.");
+      const body = (await response.json()) as ReportsResponse;
+      setReports(body.data.reports);
+      setError(null);
+      if (announce) announceLiveRegion(`${body.data.reports.length} laporan komunitas dimuat.`);
+    } catch {
+      setError("Tidak dapat memuat laporan komunitas. Coba lagi.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
-    async function load() {
-      try {
-        const response = await fetch("/api/reports", { cache: "no-store" });
-        if (!response.ok) throw new Error("Gagal memuat laporan.");
-        const body = (await response.json()) as ReportsResponse;
-        if (!cancelled) {
-          setReports(body.data.reports);
-          announceLiveRegion(`${body.data.reports.length} laporan komunitas dimuat.`);
-        }
-      } catch {
-        if (!cancelled) setError("Tidak dapat memuat laporan komunitas. Coba lagi.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+    async function run() {
+      if (cancelled) return;
+      await load(true);
     }
-    void load();
+    void run();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [load]);
+
+  // Segarkan senyap tiap 60 detik selama halaman aktif & online -> feed "realtime".
+  useAutoRefresh(() => void load(false), 60_000, online);
 
   const visible = useMemo(() => {
     let list = reports;

@@ -22,6 +22,10 @@ func validationErrors(items []fieldError) *errs.Error {
 	return errs.FailDetails("Periksa kembali isian form.", "VALIDATION_ERROR", 422, items)
 }
 
+func validationErr(details interface{}) *errs.Error {
+	return errs.FailDetails("Periksa kembali isian form.", "VALIDATION_ERROR", 422, details)
+}
+
 // isEmail mirrors src/lib/api/validate.ts leniently: must have a @, a dot
 // after it, and no spaces or extra @s.
 func isEmail(value string) bool {

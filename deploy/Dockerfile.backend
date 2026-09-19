@@ -1,0 +1,30 @@
+# Build context: repository root.
+#   docker build -f deploy/Dockerfile.backend -t blindspot-api .
+FROM golang:1.26-alpine AS builder
+
+WORKDIR /build
+
+# Cache modules first (backend/go.mod + go.sum only).
+COPY backend/go.mod backend/go.sum ./
+RUN go mod download
+
+COPY backend/ ./
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/blindspot-api ./cmd/server
+
+# --- runtime: minimal alpine, non-root user ---
+FROM alpine:3.21
+
+RUN apk add --no-cache ca-certificates tzdata \
+    && adduser -D -u 10001 -h /home/app app
+
+USER app
+WORKDIR /home/app
+
+COPY --from=builder /out/blindspot-api /usr/local/bin/blindspot-api
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:8080/api/health >/dev/null 2>&1 || exit 1
+
+ENTRYPOINT ["/usr/local/bin/blindspot-api"]

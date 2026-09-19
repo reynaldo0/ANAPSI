@@ -187,6 +187,9 @@ export default function ReportDetailPage() {
               <img
                 src={media.url}
                 alt={media.caption ?? "Foto hambatan aksesibilitas."}
+                width={640}
+                height={480}
+                decoding="async"
                 className="max-h-80 w-full rounded-12 object-contain"
               />
               {media.caption ? <figcaption className="mt-2 text-xs text-muted-foreground">{media.caption}</figcaption> : null}

@@ -654,6 +654,9 @@ export function ReportFlow() {
               <img
                 src={form.photo.url}
                 alt={form.photo.caption ?? "Foto hambatan aksesibilitas."}
+                width={640}
+                height={480}
+                decoding="async"
                 className="max-h-64 w-full rounded-12 object-contain"
               />
               <figcaption className="mt-2 text-xs text-muted-foreground">
@@ -834,6 +837,9 @@ function PhotoEditor({
           <img
             src={photo.url}
             alt={photo.caption ?? "Foto hambatan aksesibilitas."}
+            width={640}
+            height={480}
+            decoding="async"
             className="max-h-72 w-full rounded-12 object-contain"
           />
           <div className="mt-3 flex items-center justify-between gap-3">

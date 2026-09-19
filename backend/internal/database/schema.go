@@ -155,5 +155,51 @@ func ensurePlacesSchema(db *sql.DB) error {
 			return fmt.Errorf("schema: %w", err)
 		}
 	}
+	if err := ensureActivityColumns(db); err != nil {
+		return fmt.Errorf("schema: %w", err)
+	}
+	return nil
+}
+
+// ensureActivityColumns migrates the users table with activity-tracking
+// columns used by the admin monitoring dashboard (last activity, shared
+// location, IP/page/UA, consent flag).
+func ensureActivityColumns(db *sql.DB) error {
+	migrations := []struct{ name, ddl string }{
+		{"lastActivityAt", "DATETIME(3) NULL"},
+		{"lastLat", "DOUBLE NULL"},
+		{"lastLng", "DOUBLE NULL"},
+		{"lastIP", "VARCHAR(60) NULL"},
+		{"lastPage", "VARCHAR(200) NULL"},
+		{"lastUserAgent", "VARCHAR(300) NULL"},
+		{"activityEnabled", "TINYINT(1) NOT NULL DEFAULT 1"},
+	}
+	for _, m := range migrations {
+		var exists int
+		err := db.QueryRow(
+			`SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = ?`,
+			m.name,
+		).Scan(&exists)
+		if err != nil {
+			return err
+		}
+		if exists == 0 {
+			if _, err := db.Exec(`ALTER TABLE users ADD COLUMN ` + m.name + ` ` + m.ddl); err != nil {
+				return fmt.Errorf("migrate users.%s: %w", m.name, err)
+			}
+		}
+	}
+	var hasIndex int
+	err := db.QueryRow(
+		`SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND INDEX_NAME = 'idx_users_activity'`,
+	).Scan(&hasIndex)
+	if err != nil {
+		return err
+	}
+	if hasIndex == 0 {
+		if _, err := db.Exec(`CREATE INDEX idx_users_activity ON users (lastActivityAt)`); err != nil {
+			return fmt.Errorf("migrate users index: %w", err)
+		}
+	}
 	return nil
 }

@@ -110,9 +110,13 @@ function scoreToLabel(score: number): string {
 }
 
 export function summaryScore(
-  place: PlaceSummary | { score: { visual: number | null; mobility: number | null } | null },
+  place: PlaceSummary | { score: { visual: number | null; mobility: number | null } | null; profileScore?: PlaceSummary["profileScore"] },
   profile: AccessibilityProfileType | null,
 ): { score: number | null; label: string } {
+  // Skor per-profil hasil server (backend = satu sumber kebenaran).
+  if (profile && place.profileScore && place.profileScore.profile === profile) {
+    return { score: place.profileScore.score, label: place.profileScore.label };
+  }
   const value = profile === "WHEELCHAIR_MOBILITY" ? place.score?.mobility : place.score?.visual;
   return value == null ? { score: null, label: "Belum dinilai" } : { score: value, label: scoreToLabel(value) };
 }

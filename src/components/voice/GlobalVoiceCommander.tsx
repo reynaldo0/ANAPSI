@@ -236,7 +236,7 @@ export function GlobalVoiceCommander() {
       : "Tekan mic, ucapkan perintah";
 
   return (
-    <div role="region" aria-label="Komando suara global 2 arah" data-tour="voice" className={`fixed left-2 z-[80] flex items-center gap-2 rounded-full border-2 border-border bg-card px-2 py-1 shadow-float md:bottom-4 ${pathname === "/map" ? "bottom-32" : "bottom-24"}`}>
+    <div role="region" aria-label="Komando suara global 2 arah" data-tour="voice" className={`fixed left-2 z-[80] flex items-center gap-2 rounded-full border-2 border-border bg-card px-2 py-1 shadow-float ${pathname === "/map" ? "bottom-32 md:bottom-44" : "bottom-24 md:bottom-4"}`}>
       <button
         type="button"
         onClick={toggleHandsFree}

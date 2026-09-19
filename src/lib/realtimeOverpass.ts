@@ -22,6 +22,41 @@ function toneForTactile(tactile: string | undefined): MapLineFeature["tone"] {
   return "warning";
 }
 
+/** Query Overpass lewat proxy backend Go (satu sumber data dari backend),
+ *  dengan fallback langsung bila backend/network bermasalah. */
+async function fetchViaProxy(query: string): Promise<unknown | null> {
+  try {
+    const res = await fetch("/api/overpass", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: query }),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+async function postOverpass(query: string): Promise<unknown | null> {
+  const proxied = await fetchViaProxy(query);
+  if (proxied) return proxied;
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `data=${encodeURIComponent(query)}`,
+      });
+      if (!res.ok) continue;
+      return (await res.json()) as unknown;
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
 /**
  * Garis pandu tunanetra (guiding block / tactile paving) dari OpenStreetMap,
  * dikembalikan sebagai polylines untuk di-gambar di atas peta.
@@ -31,51 +66,36 @@ export async function fetchGuidingLines(bbox: string): Promise<MapLineFeature[]>
 way["highway"~"footway|pedestrian|path|service"]["tactile_paving"]( ${bbox} );
 way["tactile_paving"]["tactile_paving"~"yes|guided|correct|no|incorrect|limited"]( ${bbox} );
 );out geom 240;`;
-  for (const endpoint of OVERPASS_ENDPOINTS) {
-    try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `data=${encodeURIComponent(query)}`,
-      });
-      if (!res.ok) continue;
-      const json = (await res.json()) as { elements?: OverpassElement[] };
-      const els = (json.elements ?? []).filter((el) => el.type === "way");
-      const lines: MapLineFeature[] = [];
-      for (const el of els) {
-        const geom = el.geometry ?? [];
-        if (geom.length < 2) continue;
-        const tactile = el.tags?.tactile_paving;
-        if (!tactile || !GUIDING_TAGS.test(tactile)) continue;
-        lines.push({
-          id: `osm-line-${el.id}`,
-          kind: "guiding_block",
-          label:
-            tactile === "yes" || tactile === "guided" || tactile === "correct"
-              ? "Guiding block / garis pemandu tunanetra"
-              : `Tactile paving: ${tactile}`,
-          tone: toneForTactile(tactile),
-          points: geom.map((g) => ({ lat: g.lat, lng: g.lon })),
-          verification: "COMMUNITY_REPORTED",
-        });
-      }
-      if (lines.length > 0) return lines;
-    } catch {
-      continue;
-    }
+  const json = (await postOverpass(query)) as { elements?: OverpassElement[] } | null;
+  if (!json) return [];
+  const els = (json.elements ?? []).filter((el) => el.type === "way");
+  const lines: MapLineFeature[] = [];
+  for (const el of els) {
+    const geom = el.geometry ?? [];
+    if (geom.length < 2) continue;
+    const tactile = el.tags?.tactile_paving;
+    if (!tactile || !GUIDING_TAGS.test(tactile)) continue;
+    lines.push({
+      id: `osm-line-${el.id}`,
+      kind: "guiding_block",
+      label:
+        tactile === "yes" || tactile === "guided" || tactile === "correct"
+          ? "Guiding block / garis pemandu tunanetra"
+          : `Tactile paving: ${tactile}`,
+      tone: toneForTactile(tactile),
+      points: geom.map((g) => ({ lat: g.lat, lng: g.lon })),
+      verification: "COMMUNITY_REPORTED",
+    });
   }
-  return [];
+  return lines;
 }
 
 export async function fetchRealtimeAccessibility(bbox: string): Promise<MapFeatureReturn[]> {
   const query = `[out:json][timeout:12];(node["wheelchair"]( ${bbox});node["tactile_paving"]( ${bbox});node["amenity"="toilets"]["wheelchair"]( ${bbox});way["highway"="footway"]["tactile_paving"]( ${bbox});node["barrier"]( ${bbox}););out 60;`;
-  for (const endpoint of OVERPASS_ENDPOINTS) {
-    try {
-      const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: `data=${encodeURIComponent(query)}` });
-      if (!res.ok) continue;
-      const json = (await res.json()) as { elements?: { id: number; lat: number; lon: number; tags?: Record<string,string> }[] };
-      const els = json.elements ?? [];
-      return els.slice(0, 60).map((el, i) => {
+  const json = (await postOverpass(query)) as { elements?: { id: number; lat: number; lon: number; tags?: Record<string,string> }[] } | null;
+  if (!json) return [];
+  const els = json.elements ?? [];
+  return els.slice(0, 60).map((el, i) => {
         const tags = el.tags ?? {};
         const wheelchair = tags.wheelchair;
         const tactile = tags.tactile_paving;
@@ -88,10 +108,7 @@ export async function fetchRealtimeAccessibility(bbox: string): Promise<MapFeatu
         else if (tactile) { tone = tactile === "yes" ? "success" : "warning"; label = tactile === "yes" ? "Guiding block tersedia" : "Guiding block terbatas"; symbol = "▮"; kind = "guiding_block"; }
         else if (tags.barrier) { tone = "danger"; label = `Hambatan: ${tags.barrier}`; symbol = "🚧"; }
         return { id: `osm-${el.id}-${i}`, kind, status: wheelchair ?? tactile ?? tags.barrier ?? "unknown", symbol, label, statusLabel: label, tone, lat: el.lat, lng: el.lon, placeId: null, placeName: tags.name ?? null, verification: "COMMUNITY_REPORTED" as const, stepCount: null } as MapFeatureReturn;
-      });
-    } catch { continue; }
-  }
-  return [];
+  });
 }
 
 export function bboxFromCenter(lat: number, lng: number, delta = 0.015): string {

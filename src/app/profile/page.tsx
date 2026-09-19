@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { ShieldCheck } from "lucide-react";
 import { TourTrigger } from "@/components/tutorial/TourTrigger";
 import { ProfileFoundation } from "@/components/profile/ProfileFoundation";
 import { ProfileSwitcher } from "@/components/profile/ProfileSwitcher";
@@ -13,6 +14,7 @@ import { announceLiveRegion } from "@/lib/announcement";
 import { useAccessibilityProfile } from "@/lib/state/ProfileContext";
 import { useAuth } from "@/lib/state/AuthContext";
 import { useToast } from "@/components/ui/Toast";
+import { SHARE_FLAG } from "@/lib/useActivityHeartbeat";
 import { ONBOARDING_CHOICES, type UserType } from "@/lib/constants";
 
 export default function ProfilePage() {
@@ -23,6 +25,48 @@ export default function ProfilePage() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [displayName, setDisplayName] = useState(user?.displayName ?? "");
   const [savingName, setSavingName] = useState(false);
+  const [shareLocation, setShareLocation] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem(SHARE_FLAG) !== "0";
+  });
+  const [savingShare, setSavingShare] = useState(false);
+
+  const toggleShareLocation = async () => {
+    const next = !shareLocation;
+    setShareLocation(next);
+    localStorage.setItem(SHARE_FLAG, next ? "1" : "0");
+    if (user) {
+      setSavingShare(true);
+      try {
+        const response = await fetch("/api/profile/activity", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ enabled: next }),
+        });
+        if (response.ok) {
+          toast({
+            tone: "success",
+            title: next ? "Lokasi dibagikan" : "Berbagi lokasi dimatikan",
+            message: next
+              ? "Admin pengasuh dapat melihat lokasimu untuk bantuan."
+              : "Lokasimu tidak lagi dibagikan ke admin.",
+          });
+        } else {
+          toast({
+            tone: "danger",
+            title: "Gagal simpan",
+            message: "Pengaturan disimpan di perangkat ini saja.",
+          });
+        }
+      } finally {
+        setSavingShare(false);
+      }
+    }
+    announceLiveRegion(
+      `Berbagi lokasi ${next ? "diaktifkan" : "dinonaktifkan"}.`,
+      { assertive: true },
+    );
+  };
 
   const saveProfile = async (choice: UserType) => {
     setUserType(choice);
@@ -89,6 +133,36 @@ export default function ProfilePage() {
         </div>
         <TourTrigger feature="profile" />
       </div>
+
+      {!loading && user?.role === "ADMIN" ? (
+        <section
+          aria-label="Kamu memiliki peran admin"
+          className="mt-6 rounded-20 border-2 border-primary/30 bg-primary-soft p-5 shadow-card"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex min-w-0 items-start gap-3">
+              <span
+                aria-hidden="true"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-12 bg-primary text-primary-foreground"
+              >
+                <ShieldCheck className="h-6 w-6" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-lg font-black">Kamu adalah admin pengasuh</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Pantau lokasi pengguna, moderasi laporan, dan kelola akun melalui dashboard khusus.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/admin"
+              className="inline-flex min-h-11 items-center justify-center rounded-12 bg-primary px-5 text-base font-bold text-primary-foreground hover:bg-primary-hover"
+            >
+              Buka Dashboard Admin
+            </Link>
+          </div>
+        </section>
+      ) : null}
 
       <section className="mt-6 space-y-6" aria-labelledby="account-heading">
         <h2 id="account-heading" className="text-h3 font-black">
@@ -163,6 +237,49 @@ export default function ProfilePage() {
         </h2>
         <div className="rounded-20 border-2 border-border bg-card p-4 shadow-card">
           <ProfileFoundation />
+        </div>
+      </section>
+
+      <section className="mt-8 space-y-4" aria-labelledby="safety-heading">
+        <h2 id="safety-heading" className="text-h3 font-black">
+          Keamanan & pemantauan
+        </h2>
+        <div className="rounded-20 border-2 border-border bg-card p-5 shadow-card">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold">Bagikan lokasi ke admin pengasuh</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Saat aktif, admin dashboard dapat melihat lokasimu saat ini dan aktivitas
+                terakhirmu untuk membantu jika kamu membutuhkan pertolongan. Lokasi dikirim
+                setiap 45 detik dan hanya saat aplikasi terbuka.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={shareLocation}
+              aria-label="Bagikan lokasi ke admin pengasuh"
+              disabled={savingShare}
+              onClick={() => void toggleShareLocation()}
+              className={
+                "relative inline-flex h-8 w-14 shrink-0 items-center rounded-full transition-colors focus-visible:outline-offset-2 " +
+                (shareLocation ? "bg-primary" : "bg-muted")
+              }
+            >
+              <span
+                aria-hidden="true"
+                className={
+                  "inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform " +
+                  (shareLocation ? "translate-x-7" : "translate-x-1")
+                }
+              />
+            </button>
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground" aria-live="polite">
+            {shareLocation
+              ? "Admin pengasuh dapat melihat lokasimu (konsen aktif)."
+              : "Admin pengasuh tidak dapat melihat lokasimu. Aktivitas terakhir tetap dicatat."}
+          </p>
         </div>
       </section>
 

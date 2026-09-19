@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"blindspot/backend/internal/config"
@@ -69,6 +70,21 @@ func handleReportsGet(w http.ResponseWriter, r *http.Request, cfg *config.Config
 	}
 	if profile == "BOTH" || profile == "WHEELCHAIR_MOBILITY" || profile == "VISUAL_NAVIGATION" {
 		filters.Profile = profile
+	}
+	if s := q.Get("status"); s != "" && model.IsStatus(s) {
+		filters.Status = s
+	}
+	if c := q.Get("category"); c != "" && model.IsReportCategory(c) {
+		filters.Category = c
+	}
+	if sev := q.Get("severity"); sev != "" && model.IsSeverity(sev) {
+		filters.Severity = sev
+	}
+	if lim, err := strconv.Atoi(q.Get("limit")); err == nil && lim > 0 {
+		filters.Limit = lim
+	}
+	if off, err := strconv.Atoi(q.Get("offset")); err == nil && off >= 0 {
+		filters.Offset = off
 	}
 	if filters.Mine {
 		session := getSession(r, cfg)

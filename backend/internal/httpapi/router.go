@@ -22,8 +22,16 @@ func NewRouter(cfg *config.Config) http.Handler {
 
 	mux.HandleFunc("GET /api/profile", func(w http.ResponseWriter, r *http.Request) { handleProfileGet(w, r, cfg) })
 	mux.HandleFunc("PUT /api/profile", func(w http.ResponseWriter, r *http.Request) { handleProfilePut(w, r, cfg) })
+	mux.HandleFunc("PUT /api/profile/activity", func(w http.ResponseWriter, r *http.Request) { handleProfileActivityPut(w, r, cfg) })
 	mux.HandleFunc("GET /api/profile/accessibility", func(w http.ResponseWriter, r *http.Request) { handleProfileAccessibilityGet(w, r, cfg) })
 	mux.HandleFunc("PUT /api/profile/accessibility", func(w http.ResponseWriter, r *http.Request) { handleProfileAccessibilityPut(w, r, cfg) })
+
+	mux.HandleFunc("POST /api/activity/heartbeat", func(w http.ResponseWriter, r *http.Request) { handleHeartbeat(w, r, cfg) })
+
+	mux.HandleFunc("GET /api/meta/layers", func(w http.ResponseWriter, r *http.Request) { handleMetaLayers(w, r, cfg) })
+
+	mux.HandleFunc("POST /api/overpass", func(w http.ResponseWriter, r *http.Request) { handleOverpassProxy(w, r, cfg) })
+	mux.HandleFunc("GET /api/overpass", func(w http.ResponseWriter, r *http.Request) { handleOverpassProxy(w, r, cfg) })
 
 	mux.HandleFunc("GET /api/places", handlePlacesGet)
 	mux.HandleFunc("GET /api/places/{id}", handlePlaceById)
@@ -31,6 +39,8 @@ func NewRouter(cfg *config.Config) http.Handler {
 	mux.HandleFunc("GET /api/places/{id}/entrances", handlePlaceEntrances)
 
 	mux.HandleFunc("GET /api/map/features", handleMapFeatures)
+
+	mux.HandleFunc("GET /api/geo/suggest", func(w http.ResponseWriter, r *http.Request) { handleGeoSuggest(w, r, cfg) })
 
 	mux.HandleFunc("GET /api/reports", func(w http.ResponseWriter, r *http.Request) { handleReportsGet(w, r, cfg) })
 	mux.HandleFunc("POST /api/reports", func(w http.ResponseWriter, r *http.Request) { handleReportsPost(w, r, cfg) })
@@ -42,6 +52,16 @@ func NewRouter(cfg *config.Config) http.Handler {
 
 	mux.HandleFunc("GET /api/admin/reports", func(w http.ResponseWriter, r *http.Request) { handleAdminReportsGet(w, r, cfg) })
 	mux.HandleFunc("PUT /api/admin/reports", func(w http.ResponseWriter, r *http.Request) { handleAdminReportsPut(w, r, cfg) })
+	mux.HandleFunc("DELETE /api/admin/reports/{id}", func(w http.ResponseWriter, r *http.Request) { handleAdminReportsDelete(w, r, cfg) })
+
+	mux.HandleFunc("GET /api/admin/stats", func(w http.ResponseWriter, r *http.Request) { handleAdminStats(w, r, cfg) })
+	mux.HandleFunc("GET /api/admin/users", func(w http.ResponseWriter, r *http.Request) { handleAdminUsersGet(w, r, cfg) })
+	mux.HandleFunc("GET /api/admin/users/{id}", func(w http.ResponseWriter, r *http.Request) { handleAdminUserGet(w, r, cfg) })
+	mux.HandleFunc("PUT /api/admin/users/{id}", func(w http.ResponseWriter, r *http.Request) { handleAdminUserPut(w, r, cfg) })
+	mux.HandleFunc("DELETE /api/admin/users/{id}", func(w http.ResponseWriter, r *http.Request) { handleAdminUserDelete(w, r, cfg) })
+	mux.HandleFunc("GET /api/admin/locations", func(w http.ResponseWriter, r *http.Request) { handleAdminLocationsGet(w, r, cfg) })
+	mux.HandleFunc("GET /api/admin/stream", func(w http.ResponseWriter, r *http.Request) { handleAdminStream(w, r, cfg) })
+	mux.HandleFunc("GET /api/admin/places", func(w http.ResponseWriter, r *http.Request) { handleAdminPlacesGet(w, r, cfg) })
 
 	mux.HandleFunc("GET /api/gamification", func(w http.ResponseWriter, r *http.Request) { handleGamification(w, r, cfg) })
 

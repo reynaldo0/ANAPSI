@@ -274,6 +274,7 @@ export interface PlaceSummary {
   lat: number;
   lng: number;
   score: { visual: number | null; mobility: number | null } | null;
+  profileScore?: { profile: AccessibilityProfileType; score: number | null; label: string };
   distanceLabel?: string;
   distanceKm?: number;
 }
@@ -316,6 +317,17 @@ export interface MapLineFeature {
   verification: VerificationStatus;
 }
 
+export interface GeoSuggestion {
+  id: string;
+  name: string;
+  subtitle: string;
+  lat: number;
+  lng: number;
+  kind: "place" | "poi" | "street" | "city" | "area";
+  icon: string;
+  place?: PlaceSummary;
+}
+
 export interface PlaceDetail {
   summary: PlaceSummary;
   description: string;
@@ -324,4 +336,71 @@ export interface PlaceDetail {
   entrances: EntranceInfo[];
   reports: ReportStub[];
   freshness: string;
+}
+
+// --- Administrasi (dashboard admin) ---
+
+export interface AdminStats {
+  totalUsers: number;
+  usersActive24h: number;
+  usersOnline: number;
+  usersLocated: number;
+  totalReports: number;
+  reportsPending: number;
+  reportsActive: number;
+  reportsVerified: number;
+  reportsResolved: number;
+  reportsRejected: number;
+  reportsOutdated: number;
+  totalVerifications: number;
+  totalSaved: number;
+  totalPlaces: number;
+  totalFeatures: number;
+  totalPoints: number;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  displayName: string;
+  role: "USER" | "ADMIN";
+  avatarUrl: string;
+  createdAt: string;
+  lastActivityAt: string | null;
+  lastLat: number | null;
+  lastLng: number | null;
+  lastIP: string;
+  lastPage: string;
+  lastUserAgent: string;
+  activityEnabled: boolean;
+  reportsCount: number;
+  verifications: number;
+  points: number;
+  badges: string[];
+}
+
+export interface AdminLocation {
+  id: string;
+  displayName: string;
+  email: string;
+  lastActivityAt: string | null;
+  lastLat: number | null;
+  lastLng: number | null;
+  lastIP: string;
+  lastPage: string;
+  online: boolean;
+}
+
+export interface AdminPlace {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  category: string;
+  lat: number;
+  lng: number;
+  reports: number;
+  entrances: number;
+  visualScore: number | null;
+  mobilityScore: number | null;
 }

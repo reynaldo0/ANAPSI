@@ -13,6 +13,9 @@ import { GlobalVoiceCommander } from "@/components/voice/GlobalVoiceCommander";
 import { SpeakOnNavigate } from "@/components/voice/SpeakOnNavigate";
 import { FeatureTour } from "@/components/tutorial/FeatureTour";
 import { useAccessibilityProfile } from "@/lib/state/ProfileContext";
+import { useActivityHeartbeat } from "@/lib/useActivityHeartbeat";
+import { useOnlineStatus } from "@/lib/useOnlineStatus";
+import { OfflineBanner } from "@/components/layout/OfflineBanner";
 import { cn } from "@/lib/cn";
 
 const FIRST_VISIT_BYPASS = new Set(["/onboarding", "/login", "/register"]);
@@ -36,6 +39,9 @@ function FirstVisitGate() {
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isMapPage = pathname === "/map";
+  const online = useOnlineStatus();
+
+  useActivityHeartbeat();
 
   useEffect(() => {
     if (!isMapPage) return;
@@ -57,6 +63,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <FirstVisitGate />
         <SpeakOnNavigate />
         <SkipLink />
+        <OfflineBanner online={online} />
         <LiveRegion />
         <AssertiveLiveRegion />
         <main id="main-content" tabIndex={-1} className="h-full w-full focus:outline-none">
@@ -73,6 +80,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <FirstVisitGate />
       <SpeakOnNavigate />
       <SkipLink />
+      <OfflineBanner online={online} />
       <LiveRegion />
       <AssertiveLiveRegion />
       <DesktopSidebar />

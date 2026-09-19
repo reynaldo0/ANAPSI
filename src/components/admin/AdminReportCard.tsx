@@ -21,12 +21,15 @@ const STATUS_CONFIG: Record<
 interface AdminReportCardProps {
   report: ReportDetail;
   onUpdate: (id: string, status: ReportStatus, notes: string) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
 }
 
-export function AdminReportCard({ report, onUpdate }: AdminReportCardProps) {
+export function AdminReportCard({ report, onUpdate, onDelete }: AdminReportCardProps) {
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState(report.moderationNotes ?? "");
   const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const status = STATUS_CONFIG[report.status] ?? STATUS_CONFIG.PENDING;
 
@@ -36,6 +39,20 @@ export function AdminReportCard({ report, onUpdate }: AdminReportCardProps) {
       await onUpdate(report.id, newStatus, notes);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    setDeleting(true);
+    try {
+      await onDelete?.(report.id);
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(false);
     }
   };
 
@@ -210,6 +227,30 @@ export function AdminReportCard({ report, onUpdate }: AdminReportCardProps) {
               ) : null}
             </div>
           </fieldset>
+
+          {onDelete ? (
+            <div className="mt-4 border-t border-border pt-4">
+              {confirmDelete ? (
+                <div className="rounded-12 border-2 border-danger bg-danger-soft p-4" role="alert">
+                  <p className="text-sm font-semibold text-danger">
+                    Hapus laporan ini permanen? Media & verifikasi ikut terhapus.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button size="sm" variant="danger" loading={deleting} onClick={() => void handleDelete()}>
+                      Ya, hapus permanen
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setConfirmDelete(false)} disabled={deleting}>
+                      Batalkan
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button size="sm" variant="ghost" loading={deleting} onClick={() => void handleDelete()}>
+                  🗑 Hapus laporan
+                </Button>
+              )}
+            </div>
+          ) : null}
 
           {report.moderationNotes ? (
             <p className="mt-3 rounded-8 bg-warning-soft px-3 py-2 text-sm text-warning">

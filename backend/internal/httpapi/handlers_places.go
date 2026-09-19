@@ -8,6 +8,7 @@ import (
 	"blindspot/backend/internal/errs"
 	"blindspot/backend/internal/model"
 	"blindspot/backend/internal/service"
+	"blindspot/backend/internal/store"
 )
 
 func handlePlacesGet(w http.ResponseWriter, r *http.Request) {
@@ -16,6 +17,7 @@ func handlePlacesGet(w http.ResponseWriter, r *http.Request) {
 	latRaw := params.Get("lat")
 	lngRaw := params.Get("lng")
 	radiusRaw := params.Get("radiusKm")
+	profile := params.Get("profile")
 
 	var origin *model.LatLng
 	if latRaw != "" && lngRaw != "" {
@@ -34,7 +36,11 @@ func handlePlacesGet(w http.ResponseWriter, r *http.Request) {
 	places := service.FilteredPlaces(service.PlacesQuery{Q: q, Origin: origin, RadiusKm: radius}, origin)
 	summaries := make([]service.PlaceSummary, 0, len(places))
 	for _, p := range places {
-		summaries = append(summaries, service.ToSummary(p, origin))
+		if model.IsAccessibilityProfile(profile) {
+			summaries = append(summaries, service.ToSummaryWithProfile(p, origin, profile))
+		} else {
+			summaries = append(summaries, service.ToSummary(p, origin))
+		}
 	}
 	ok(w, map[string]interface{}{"places": summaries, "source": "demo"})
 }
@@ -54,7 +60,7 @@ func handlePlaceAccessibility(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	profile := r.URL.Query().Get("profile")
 	if profile != "VISUAL_NAVIGATION" && profile != "WHEELCHAIR_MOBILITY" {
-		writeErr(w, errs.FailDetails("Pilih profil visual atau kursi roda.", "VALIDATION_ERROR", 422, map[string]string{"profile": "Pilih profil visual atau kursi roda."}))
+		writeErr(w, validationErr(map[string]string{"profile": "Pilih profil visual atau kursi roda."}))
 		return
 	}
 	place := demo.FindPlace(id)
@@ -100,5 +106,38 @@ func handleMapFeatures(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	features := service.MockFeatures(profile, origin)
+	if r.URL.Query().Get("includeReports") == "1" {
+		// Merge the live community reports (excluding finished ones) onto the
+		// map as markers so "semua data nyata" tampil dari backend.
+		reports, _, err := store.ListReports(store.ReportFilters{Limit: 50})
+		if err == nil {
+			for _, rep := range reports {
+				if rep.Status == "RESOLVED" || rep.Status == "REJECTED" {
+					continue
+				}
+				if rep.Latitude == nil || rep.Longitude == nil {
+					continue
+				}
+				tone := "warning"
+				if meta, ok := model.REPORT_STATUS_META[rep.Status]; ok {
+					tone = meta.Tone
+				}
+				features = append(features, service.MapFeatureReturn{
+					ID:           rep.ID,
+					Kind:         "report",
+					Status:       rep.Status,
+					Symbol:       "📌",
+					Label:        "Laporan: " + rep.CategoryLabel,
+					StatusLabel:  model.ReportStatusLabel(rep.Status),
+					Tone:         tone,
+					Lat:          *rep.Latitude,
+					Lng:          *rep.Longitude,
+					PlaceID:      rep.PlaceID,
+					PlaceName:    rep.PlaceName,
+					Verification: rep.Verification,
+				})
+			}
+		}
+	}
 	ok(w, map[string]interface{}{"features": features, "source": "demo", "profile": profile})
 }

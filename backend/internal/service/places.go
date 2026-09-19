@@ -32,8 +32,17 @@ type PlaceSummary struct {
 	Lat           float64         `json:"lat"`
 	Lng           float64         `json:"lng"`
 	Score         map[string]*int `json:"score"`
+	ProfileScore  *ProfileScoreInfo `json:"profileScore,omitempty"`
 	DistanceLabel string          `json:"distanceLabel,omitempty"`
 	DistanceKm    *float64        `json:"distanceKm,omitempty"`
+}
+
+// ProfileScoreInfo is the server-computed score for one accessibility profile
+// (single source of truth for the per-profile badge on list entries).
+type ProfileScoreInfo struct {
+	Profile string `json:"profile"`
+	Score   *int   `json:"score"`
+	Label   string `json:"label"`
 }
 
 // PlaceDetail is the full API shape of a place page.
@@ -158,6 +167,39 @@ func ToSummary(place *demo.Place, origin *model.LatLng) PlaceSummary {
 	if dist != nil {
 		s.DistanceLabel = dist.Label
 		s.DistanceKm = &dist.Km
+	}
+	return s
+}
+
+// ScoreLabel maps a 0–100 accessibility score to its display label.
+func ScoreLabel(score *int) string {
+	if score == nil {
+		return "Belum dinilai"
+	}
+	switch {
+	case *score >= 80:
+		return "Sangat Aksesibel"
+	case *score >= 60:
+		return "Aksesibel Sebagian"
+	case *score >= 40:
+		return "Aksesibilitas Terbatas"
+	default:
+		return "Hambatan Signifikan"
+	}
+}
+
+// ToSummaryWithProfile summarizes a place and appends the per-profile score so
+// clients render the profile badge without re-implementing scoring.
+func ToSummaryWithProfile(place *demo.Place, origin *model.LatLng, profile string) PlaceSummary {
+	s := ToSummary(place, origin)
+	if model.IsAccessibilityProfile(profile) {
+		var sc *int
+		if profile == "WHEELCHAIR_MOBILITY" {
+			sc = s.Score["mobility"]
+		} else {
+			sc = s.Score["visual"]
+		}
+		s.ProfileScore = &ProfileScoreInfo{Profile: profile, Score: sc, Label: ScoreLabel(sc)}
 	}
 	return s
 }

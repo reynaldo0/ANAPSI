@@ -2,7 +2,7 @@
 
 import { useId, useRef, useState, type KeyboardEvent } from "react";
 import { Search, X, CornerDownLeft, Loader2 } from "lucide-react";
-import type { GeoSuggestion } from "@/app/api/geo/suggest/route";
+import type { GeoSuggestion } from "@/types";
 import type { LatLng } from "@/lib/geo";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
