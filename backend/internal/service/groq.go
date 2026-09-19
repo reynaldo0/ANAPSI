@@ -18,7 +18,7 @@ import (
 
 const groqChatURL = "https://api.groq.com/openai/v1/chat/completions"
 const groqSTTURL = "https://api.groq.com/openai/v1/audio/transcriptions"
-const GroqChatModel = "llama-3.3-70b-versatile"
+const GroqChatModel = "openai/gpt-oss-120b"
 const GroqSTTModel = "whisper-large-v3-turbo"
 
 const chatbotSystemPrompt = `Kamu adalah BLINDSPOT Voice Chatbot khusus tunanetra. Berbeda dari Asisten deterministik: kamu adalah teman ngobrol empatik, ringkas, audio-first.
