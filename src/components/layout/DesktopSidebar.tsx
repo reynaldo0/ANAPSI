@@ -56,7 +56,6 @@ const pathname = usePathname();
           </span>
           <span className="min-w-0">
             <span className="label-uppercase block text-lg tracking-tight text-primary">{APP_NAME}</span>
-            <span className="label-uppercase block text-[10px] text-muted-foreground">{APP_TAGLINE}</span>
           </span>
         </Link>
 
