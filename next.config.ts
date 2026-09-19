@@ -7,8 +7,12 @@ function apiTarget(): string {
   return process.env.INTERNAL_API_URL ?? "http://127.0.0.1:8080";
 }
 
+// `output: standalone` is for self-hosting (Docker/VPS). Vercel skips it:
+// Vercel has its own packaging, and standalone tracing breaks Vercel builds.
+const isVercel = process.env.VERCEL === "1";
+
 const nextConfig: NextConfig = {
-  output: "standalone",
+  output: isVercel ? undefined : "standalone",
   poweredByHeader: false,
   compress: true,
   async headers() {
