@@ -10,6 +10,9 @@ import { LoadingState } from "@/components/ui/LoadingState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Badge } from "@/components/ui/Badge";
 import { useAccessibilityProfile } from "@/lib/state/ProfileContext";
+import { useAudioManager } from "@/lib/audio/AudioManager";
+import { announceLiveRegion } from "@/lib/announcement";
+import { AudioPriority } from "@/types";
 import type { AccessibilityEvaluation, PlaceDetail } from "@/types";
 
 interface DetailResponse {
@@ -26,6 +29,7 @@ export default function PlaceDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { activeProfile } = useAccessibilityProfile();
+  const audio = useAudioManager();
 
   const [detail, setDetail] = useState<PlaceDetail | null>(null);
   const [source, setSource] = useState<string | null>(null);
@@ -286,7 +290,7 @@ export default function PlaceDetailPage() {
           <Navigation2 className="h-6 w-6" aria-hidden="true" />
           Rute Aksesibel ke Sini
         </button>
-        <button type="button" onClick={() => { const text = `${detail.summary.name}. ${evaluation ? `${evaluation.label} skor ${evaluation.score ?? "belum tersedia"}.` : ""} ${detail.description}`; if ("speechSynthesis" in window) { const u = new SpeechSynthesisUtterance(text); u.lang = "id-ID"; speechSynthesis.speak(u);} }} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-12 border-2 border-border bg-card px-5 font-bold hover:bg-muted" aria-label="Dengarkan deskripsi tempat">
+        <button type="button" onClick={() => { const text = `${detail.summary.name}. ${evaluation ? `${evaluation.label} skor ${evaluation.score ?? "belum tersedia"}.` : ""} ${detail.description}`; audio.speak(text, AudioPriority.UserRequestedInformation); announceLiveRegion(text, { assertive: true }); }} className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-12 border-2 border-border bg-card px-5 font-bold hover:bg-muted" aria-label="Dengarkan deskripsi tempat">
           Dengarkan Deskripsi 🔊
         </button>
         <p className="text-sm text-muted-foreground">

@@ -163,16 +163,16 @@ export function SearchInput({
           ) : null}
         </div>
         {showSubmitButton ? (
-          <div className="hidden shrink-0 md:block">
+          <div className="shrink-0">
             <Button
               type="button"
               size="sm"
               onClick={submit}
-              className="h-12 rounded-14 px-4"
+              className="h-12 rounded-14 px-3 sm:px-4"
               aria-label="Cari tempat"
             >
               <Search className="h-4 w-4" aria-hidden="true" />
-              Cari
+              <span className="hidden sm:inline">Cari</span>
             </Button>
           </div>
         ) : null}

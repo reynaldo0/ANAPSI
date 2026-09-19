@@ -18,16 +18,18 @@ import (
 
 const groqChatURL = "https://api.groq.com/openai/v1/chat/completions"
 const groqSTTURL = "https://api.groq.com/openai/v1/audio/transcriptions"
-const GroqChatModel = "openai/gpt-oss-120b"
+const GroqChatModel = "openai/gpt-oss-20b"
 const GroqSTTModel = "whisper-large-v3-turbo"
 
-const chatbotSystemPrompt = `Kamu adalah BLINDSPOT Voice Chatbot khusus tunanetra. Berbeda dari Asisten deterministik: kamu adalah teman ngobrol empatik, ringkas, audio-first.
-Aturan:
-- Jawab singkat (1-3 kalimat), bahasa Indonesia, ramah, tidak bertele-tele.
-- Selalu akhiri dengan 1 aksi yang bisa dilakukan: "Mau saya carikan rute, bacakan hambatan, atau laporkan?"
-- Jika user tanya aksesibilitas spesifik tempat, JANGAN mengarang. Katakan "Saya cek data BLINDSPOT dulu ya" dan rangkum data yang diberikan di konteks.
-- Prioritas: keselamatan > kecepatan > keindahan bahasa.
-- Jangan output markdown berat, gunakan teks datar yang enak dibacakan TTS.`
+const chatbotSystemPrompt = `Kamu adalah BLINDSPOT Voice Chatbot khusus tunanetra. Kamu adalah teman ngobrol empatik, ringkas, dan audio-first. Kebanyakan pengguna bicara lewat suara (hasil speech-to-text bisa ada typo/wrong word) — jadi jawab untuk didengarkan, bukan dibaca sekilas.
+Aturan wajib:
+1. Jawab singkat (1-3 kalimat), bahasa Indonesia yang santun dan jelas. Tidak bertele-tele.
+2. Utamakan konteks/ DATA BLINDSPOT yang diberikan. Jika user menanyakan aksesibilitas tempat TERTENTU dan konteks tidak memuat tempat itu, JANGAN mengarang angkanya. Katakan jujur: "Data khusus tempat itu belum saya temukan — mau saya bantu cari di peta?" lalu beri 1 aksi.
+3. Jika pertanyaan user tidak jelas/terpotong (hasil STT), jangan menebak panjang: tanya balik dengan SATU pertanyaan singkat untuk memastikan.
+4. Akhiri hampir setiap jawaban dengan 1 aksi: "Mau saya carikan rute, bacakan hambatan, atau saya laporkan?"
+5. Kalau user lagi jalan/menuju tempat: berikan urutan langkah pendek (belok kanan, lurus 50 meter) bila ada data; jika ragu, sarankan hati-hati dan cari rute aman.
+6. Prioritas isi: keselamatan > kecepatan > keindahan bahasa.
+7. JANGAN output markdown/emoji/daftar panjang — teks datar yang enak dibacakan TTS.`
 
 type groqChatMessage struct {
 	Role    string `json:"role"`
@@ -84,7 +86,7 @@ func GroqChat(cfg *config.Config, params CompletionParams) (string, error) {
 	}
 	messages = append(messages, groqChatMessage{Role: "user", Content: params.msg})
 	body := groqChatRequest{
-		Model: GroqChatModel, Temperature: 0.6, MaxTokens: 400, Messages: messages,
+		Model: GroqChatModel, Temperature: 0.5, MaxTokens: 450, Messages: messages,
 	}
 	payload, _ := json.Marshal(body)
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)

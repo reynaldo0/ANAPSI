@@ -319,20 +319,22 @@ export function JourneyController() {
         />
       ) : (
         <div className="space-y-5">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="flex min-w-0 items-center gap-1 text-sm text-muted-foreground">
               <MapPin className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
               <span className="truncate">
                 {selected.fromName} → {selected.toName}
               </span>
             </p>
-            <Badge tone={isVisual ? "neutral" : "success"} symbol={isVisual ? "👁️" : "♿"}>
-              {isVisual ? "Navigasi audio" : "Navigasi kursi roda"}
-            </Badge>
-            <Badge tone={realStreet ? "success" : "neutral"} symbol={realStreet ? "🛣" : "◇"}>
-              {realStreet ? "Rute mengikuti jalan nyata" : "Rute estimasi demo"}
-            </Badge>
-            <SignLanguageToggle className="hidden md:inline-flex" />
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone={isVisual ? "neutral" : "success"} symbol={isVisual ? "👁️" : "♿"}>
+                {isVisual ? "Navigasi audio" : "Navigasi kursi roda"}
+              </Badge>
+              <Badge tone={realStreet ? "success" : "neutral"} symbol={realStreet ? "🛣" : "◇"}>
+                {realStreet ? "Rute mengikuti jalan nyata" : "Rute estimasi demo"}
+              </Badge>
+              <SignLanguageToggle className="inline-flex" />
+            </div>
           </div>
 
           <div>

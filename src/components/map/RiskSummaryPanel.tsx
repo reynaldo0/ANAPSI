@@ -38,6 +38,8 @@ export function RiskSummaryPanel({ place, origin, fromLabel, profile, onClose, o
   const [error, setError] = useState<string | null>(null);
   const [real, setReal] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,6 +83,40 @@ export function RiskSummaryPanel({ place, origin, fromLabel, profile, onClose, o
     announceLiveRegion(`Menghitung ringkasan risiko perjalanan menuju ${place.name}.`, { assertive: true });
   }, [place.name]);
 
+  // Simpan elemen pembuka saat panel ter-mount, kembalikan fokus saat panel ditutup/unmount.
+  useEffect(() => {
+    restoreFocusRef.current = document.activeElement as HTMLElement | null;
+    return () => {
+      restoreFocusRef.current?.focus?.();
+      restoreFocusRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const node = sheetRef.current;
+    if (!node) return;
+    const trapTab = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const focusables = Array.from(
+        node.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", trapTab);
+    return () => window.removeEventListener("keydown", trapTab);
+  }, []);
+
   const startNavigation = () => {
     if (!routes || routes.length === 0) return;
     const chosen = routes.find((r) => r.recommended) ?? routes[0];
@@ -100,7 +136,7 @@ export function RiskSummaryPanel({ place, origin, fromLabel, profile, onClose, o
         onClick={onClose}
         className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
       />
-      <div className="relative flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-24 border border-border bg-card shadow-float animate-slide-up sm:mx-4 sm:mb-0 sm:max-w-xl sm:rounded-24">
+      <div ref={sheetRef} className="relative flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-24 border border-border bg-card shadow-float animate-slide-up sm:mx-4 sm:mb-0 sm:max-w-xl sm:rounded-24">
         <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
           <div className="flex min-w-0 items-center gap-3">
             <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-14 bg-warning-soft text-warning">

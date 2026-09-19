@@ -46,29 +46,106 @@ function createRecognition(): SpeechRecognitionLike | null {
   return rec;
 }
 
+export interface SpeechRecognitionOptions {
+  /** Secara otomatis membuat sesi baru saat sesi berakhir (hands-free). */
+  autoRestart?: boolean;
+  /**
+   * Jeda senyap (ms) setelah user berhenti berbicara untuk dianggap "utarakan selesai".
+   * 0 = nonaktif. Dipakai agar sistem langsung bereaksi tanpa menunggu final event,
+   * sehingga AI tidak memotong dan tidak menunda jawaban.
+   */
+  endPointerMs?: number;
+  /** Dipanggil saat user dianggap SELESAI bicara (satu utarapan utuh siap dikirim). */
+  onUtterance?: (text: string) => void;
+  /** Dipanggil segera saat user mulai bicara — host dapat mematikan TTS agar AI tidak menutupi user (barge-in). */
+  onUserSpeaking?: () => void;
+}
+
+/**
+ * Hook pengenal suara web (webkit SpeechRecognition) yang dirancang untuk
+ * percakapan dua arah yang responsif:
+ * - Barge-in: segera setelah user mulai bicara, onUserSpeaking dipanggil
+ *   (host mematikan suara AI yang sedang membalas).
+ * - Endpointer: setelah user berhenti bicara ~endPointerMs ms, onUtterance
+ *   dipanggil dengan teks utarapan itu (AI menunggu user selesai, baru menjawab).
+ * - Deduplikasi: utarapan yang sama hanya dilaporkan sekali.
+ */
 export function useSpeechRecognition(
   voiceCopy: VoiceCopy = REPORT_VOICE_COPY,
-  options: { autoRestart?: boolean } = {},
+  options: SpeechRecognitionOptions = {},
 ) {
-  const { autoRestart = false } = options;
+  const { autoRestart = false, endPointerMs = 0, onUtterance, onUserSpeaking } = options;
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const [supported] = useState(() => createRecognition() !== null);
   const [status, setStatus] = useState<MicStatus>("inactive");
   const [interim, setInterim] = useState("");
   const [finalTranscript, setFinalTranscript] = useState("");
+
   const autoRestartRef = useRef(autoRestart);
+  const endPointerMsRef = useRef(endPointerMs);
+  const onUtteranceRef = useRef(onUtterance);
+  const onUserSpeakingRef = useRef(onUserSpeaking);
   const sessionStartedRef = useRef(false);
   const silentEndRef = useRef(false);
+
+  // State yang dibaca dari callback SpeechRecognition.
+  const interimRef = useRef("");
+  const pendingFinalRef = useRef("");
+  const lastSpeechMsRef = useRef(0);
+  const firedRef = useRef("");
+  const endTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     autoRestartRef.current = autoRestart;
   }, [autoRestart]);
 
   useEffect(() => {
+    endPointerMsRef.current = endPointerMs;
+  }, [endPointerMs]);
+
+  useEffect(() => {
+    onUtteranceRef.current = onUtterance;
+  }, [onUtterance]);
+
+  useEffect(() => {
+    onUserSpeakingRef.current = onUserSpeaking;
+  }, [onUserSpeaking]);
+
+  useEffect(() => {
     return () => {
       recRef.current?.abort();
+      if (endTimerRef.current !== null) window.clearTimeout(endTimerRef.current);
     };
   }, []);
+
+  const fireUtterance = useCallback((raw: string) => {
+    const text = raw.trim();
+    if (!text || firedRef.current === text) return;
+    firedRef.current = text;
+    interimRef.current = "";
+    setStatus("processing");
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(60);
+      } catch {
+        // ignore
+      }
+    }
+    onUtteranceRef.current?.(text);
+  }, []);
+
+  const scheduleEndPointer = useCallback(() => {
+    const ms = endPointerMsRef.current;
+    if (ms <= 0) return;
+    if (endTimerRef.current !== null) window.clearTimeout(endTimerRef.current);
+    endTimerRef.current = window.setTimeout(() => {
+      endTimerRef.current = null;
+      if (Date.now() - lastSpeechMsRef.current < ms) return;
+      const text = interimRef.current.trim();
+      if (!text) return;
+      fireUtterance(text);
+    }, ms + 150);
+  }, [fireUtterance]);
 
   const bindRef = useRef<(rec: SpeechRecognitionLike) => void>(() => {});
   const bind = useCallback(
@@ -78,7 +155,6 @@ export function useSpeechRecognition(
       rec.interimResults = true;
 
       rec.onstart = () => {
-        // Mode suara langsung: hanya umumkan sekali saat sesi dimulai, lalu diam-diam.
         if (autoRestartRef.current && sessionStartedRef.current) {
           setStatus("listening");
           return;
@@ -89,13 +165,21 @@ export function useSpeechRecognition(
       };
 
       rec.onend = () => {
+        if (endTimerRef.current !== null) {
+          window.clearTimeout(endTimerRef.current);
+          endTimerRef.current = null;
+        }
         if (silentEndRef.current) {
           silentEndRef.current = false;
           setStatus("inactive");
           return;
         }
+        // Saat sesi berhenti (manual/tidak sengaja) dan masih ada utarapan yang
+        // belum dikirim, kirim dulu agar tidak ada pertanyaan user yang tertelan.
+        const pending = interimRef.current.trim() || pendingFinalRef.current;
+        if (pending) fireUtterance(pending);
+
         if (autoRestartRef.current) {
-          // Tetap mendengarkan: buat sesi baru tanpa mengumumkan ulang.
           const next = createRecognition();
           if (!next) {
             setStatus("inactive");
@@ -127,7 +211,6 @@ export function useSpeechRecognition(
           return;
         }
         if (event.error === "no-speech") {
-          // Dalam mode suara langsung, diam saja dan terus menyimak.
           if (!autoRestartRef.current) {
             setStatus("inactive");
             sessionStartedRef.current = false;
@@ -140,21 +223,30 @@ export function useSpeechRecognition(
 
       rec.onresult = (event) => {
         let interimText = "";
-        let finalText = "";
+        let finalChunk = "";
         for (let i = 0; i < event.results.length; i += 1) {
           const result = event.results[i];
           const chunk = result[0]?.transcript ?? "";
-          if (result.isFinal) finalText += chunk;
+          if (result.isFinal) finalChunk += chunk;
           else interimText += chunk;
         }
         if (interimText) {
+          // User mulai/terus bicara → beri tahu host supaya TTS dimatikan
+          // (AI TIDAK boleh memotong). Lalu jadwalkan endpointer.
+          interimRef.current = interimText;
+          lastSpeechMsRef.current = Date.now();
+          onUserSpeakingRef.current?.();
           setInterim(interimText);
+          scheduleEndPointer();
           announceLiveRegion(voiceCopy.interim(interimText));
         }
-        if (finalText) setFinalTranscript((prev) => (prev ? `${prev} ${finalText}` : finalText));
+        if (finalChunk) {
+          pendingFinalRef.current = finalChunk.trim();
+          setFinalTranscript((prev) => (prev ? `${prev} ${finalChunk}` : finalChunk));
+        }
       };
     },
-    [voiceCopy],
+    [voiceCopy, scheduleEndPointer, fireUtterance],
   );
 
   useEffect(() => {
@@ -165,6 +257,8 @@ export function useSpeechRecognition(
     if (!supported) return;
     setInterim("");
     setFinalTranscript("");
+    interimRef.current = "";
+    pendingFinalRef.current = "";
     const rec = createRecognition();
     if (!rec) return;
     recRef.current = rec;
@@ -201,6 +295,7 @@ export function useSpeechRecognition(
     }
     setStatus("inactive");
     setInterim("");
+    interimRef.current = "";
   }, []);
 
   return { supported, status, interim, finalTranscript, start, stop, suspend };

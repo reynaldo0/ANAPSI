@@ -766,7 +766,7 @@ function VoiceEditor({
           {listening ? <span className="animate-pulse text-3xl">●</span> : <Mic className="h-9 w-9" aria-hidden="true" />}
         </button>
         <p className="text-sm font-medium">
-          Mikrofon: <span>{listening ? "Listening" : "Inactive"}</span>
+          Mikrofon: <span>{listening ? "Mendengarkan" : "Nonaktif"}</span>
         </p>
         <p className="text-sm text-muted-foreground">
           {listening ? "Ketuk untuk berhenti" : "Tekan tombol, lalu bicarakan hambatannya"}

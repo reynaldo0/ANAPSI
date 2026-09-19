@@ -39,10 +39,9 @@ function LoginForm() {
     if (!success) return;
 
     toast({ tone: "success", title: "Berhasil masuk", message: "Selamat datang kembali!" });
+    announceLiveRegion("Kamu berhasil masuk.", { assertive: true });
     const safeReturnTo =
       returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/profile";
-    announceLiveRegion("Kamu berhasil masuk.", { assertive: true });
-    toast({ tone: "success", title: "Berhasil masuk", message: "Selamat datang kembali!" });
     router.replace(safeReturnTo);
   };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useAutoRefresh } from "@/lib/useAutoRefresh";
 import { useOnlineStatus } from "@/lib/useOnlineStatus";
 import { MapPin, PencilLine } from "lucide-react";
@@ -44,6 +44,7 @@ interface ReportsResponse {
 
 export function CommunityFeed() {
   const [tab, setTab] = useState<TabId>("recent");
+  const tabBarRef = useRef<HTMLDivElement>(null);
   const [statusFilter, setStatusFilter] = useState<ReportDetail["status"] | "ALL">("ALL");
   const [profileFilter, setProfileFilter] = useState<AffectedProfile | "ALL">("ALL");
   const [reports, setReports] = useState<ReportDetail[]>([]);
@@ -117,6 +118,22 @@ export function CommunityFeed() {
     announceLiveRegion(next === "nearby" && !currentLocation ? `${label}: atur lokasi untuk melihat jarak.` : `Tab: ${label}.`);
   }, [currentLocation]);
 
+  const onTabKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+    const keys = ["ArrowLeft", "ArrowRight", "Home", "End"];
+    if (!keys.includes(event.key)) return;
+    event.preventDefault();
+    const currentIdx = TABS.findIndex((t) => t.id === tab);
+    let next = currentIdx;
+    if (event.key === "ArrowLeft") next = (currentIdx - 1 + TABS.length) % TABS.length;
+    else if (event.key === "ArrowRight") next = (currentIdx + 1) % TABS.length;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = TABS.length - 1;
+    changeTab(TABS[next].id);
+    tabBarRef.current
+      ?.querySelector<HTMLButtonElement>(`[data-tab="${TABS[next].id}"]`)
+      ?.focus();
+  }, [tab, changeTab]);
+
   const locate = useCallback(() => {
     if (typeof window === "undefined" || !("geolocation" in navigator)) {
       announceLiveRegion("Lokasi otomatis tidak didukung. Gunakan tab Terbaru untuk melihat laporan.", {
@@ -163,13 +180,17 @@ export function CommunityFeed() {
 
   return (
     <div className="space-y-5">
-      <div role="tablist" aria-label="Urutan laporan" className="flex gap-1 rounded-14 bg-muted p-1">
+      <div ref={tabBarRef} role="tablist" aria-label="Urutan laporan" onKeyDown={onTabKeyDown} className="flex gap-1 rounded-14 bg-muted p-1">
         {TABS.map((t) => (
           <button
             key={t.id}
+            id={`tab-${t.id}`}
             type="button"
             role="tab"
+            data-tab={t.id}
             aria-selected={tab === t.id}
+            aria-controls="community-tabpanel"
+            tabIndex={tab === t.id ? 0 : -1}
             onClick={() => changeTab(t.id)}
             className={`flex-1 rounded-12 px-3 py-2 text-sm font-medium ${
               tab === t.id ? "bg-card text-foreground shadow-card" : "text-muted-foreground hover:text-foreground"
@@ -180,6 +201,12 @@ export function CommunityFeed() {
         ))}
       </div>
 
+      <div
+        id="community-tabpanel"
+        role="tabpanel"
+        aria-labelledby={`tab-${tab}`}
+        className="space-y-4"
+      >
       <div className="flex flex-wrap gap-2">
         <label className="flex items-center gap-2 text-sm">
           <span className="text-muted-foreground">Status</span>
@@ -259,6 +286,7 @@ export function CommunityFeed() {
           ))}
         </ul>
       )}
+      </div>
     </div>
   );
 }

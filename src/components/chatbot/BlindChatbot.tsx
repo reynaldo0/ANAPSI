@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Bot, Mic, MicOff, Send, Volume2, VolumeX, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -24,7 +24,13 @@ type ChatMsg = { role: "user" | "assistant"; content: string };
 
 export function BlindChatbot() {
   const audio = useAudioManager();
-  const voice = useSpeechRecognition(VOICE_COPY);
+  const utteranceRef = useRef<(t: string) => void>(() => {});
+  const micSuspendRef = useRef<() => void>(() => {});
+  const voice = useSpeechRecognition(VOICE_COPY, {
+    endPointerMs: 1000,
+    onUserSpeaking: () => audio.stop(),
+    onUtterance: (text) => utteranceRef.current(text),
+  });
   const sign = useSignLanguage();
   const [input, setInput] = useState("");
   const [history, setHistory] = useState<ChatMsg[]>([
@@ -34,7 +40,6 @@ export function BlindChatbot() {
   const [autoSpeak, setAutoSpeak] = useState(true);
   const [recording, setRecording] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
-  const handledRef = useRef(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const sendRef = useRef<(text: string) => Promise<void>>(async () => {});
@@ -73,14 +78,20 @@ export function BlindChatbot() {
     sendRef.current = send;
   });
 
-  // Browser STT -> auto send
+  const handleUtterance = useCallback((text: string) => {
+    void sendRef.current(text);
+    // Matikan mikrofon selama AI menjawab supaya jawaban TTS tidak
+    // tertangkap sebagai perintah baru (anti echo / anti memotong user).
+    micSuspendRef.current?.();
+  }, []);
+
   useEffect(() => {
-    if (!voice.finalTranscript) return;
-    const fresh = voice.finalTranscript.slice(handledRef.current).trim();
-    handledRef.current = voice.finalTranscript.length;
-    if (!fresh) return;
-    void sendRef.current(fresh);
-  }, [voice.finalTranscript]);
+    utteranceRef.current = handleUtterance;
+  }, [handleUtterance]);
+
+  useEffect(() => {
+    micSuspendRef.current = voice.suspend;
+  }, [voice.suspend]);
 
   // Rekaman untuk transkripsi lebih akurat
   const toggleRecord = async () => {
@@ -129,7 +140,7 @@ export function BlindChatbot() {
         </div>
       </header>
 
-      <div ref={listRef} role="log" aria-live="polite" aria-label="Riwayat chat" className="flex max-h-[52vh] min-h-[280px] flex-col gap-3 overflow-y-auto rounded-16 border-2 border-border bg-muted/30 p-3 sm:max-h-[56vh]">
+      <div ref={listRef} aria-label="Riwayat chat" role="log" aria-live="off" className="flex max-h-[52vh] min-h-[280px] flex-col gap-3 overflow-y-auto rounded-16 border-2 border-border bg-muted/30 p-3 sm:max-h-[56vh]">
         {history.map((m, i) => (
           <div key={i} className={cn("max-w-[85%] rounded-16 px-4 py-3 text-sm leading-relaxed shadow-card", m.role === "user" ? "self-end bg-primary text-primary-foreground" : "self-start border-2 border-border bg-card")}>
             <p className="sr-only">{m.role === "user" ? "Anda:" : "Chatbot:"}</p>
@@ -154,10 +165,10 @@ export function BlindChatbot() {
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <button type="button" onClick={() => (voice.status === "listening" ? voice.stop() : voice.start())} aria-pressed={voice.status === "listening"} className={`flex h-14 items-center justify-center gap-2 rounded-12 border-2 text-base font-black ${voice.status === "listening" ? "border-danger bg-danger text-white animate-pulse" : "border-border bg-card hover:bg-muted"}`}>
-          {voice.status === "listening" ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />} {voice.status === "listening" ? "Berhenti" : "Bicara (Browser STT)"}
+          {voice.status === "listening" ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />} {voice.status === "listening" ? "Berhenti" : "Bicara"}
         </button>
         <button type="button" onClick={() => void toggleRecord()} aria-label="Rekam suara untuk transkripsi lebih akurat" className={`flex h-14 items-center justify-center gap-2 rounded-12 border-2 text-base font-black ${recording ? "border-danger bg-danger text-white" : "border-primary bg-primary-soft text-primary hover:bg-primary hover:text-primary-foreground"}`}>
-          <Mic className="h-5 w-5" /> {recording ? "Stop Rekam" : "Rekam Suara Akurat"}
+          <Mic className="h-5 w-5" /> {recording ? "Hentikan Rekaman" : "Rekam Suara"}
         </button>
       </div>
       {voice.interim ? <p className="rounded-10 bg-muted px-3 py-2 text-sm italic" aria-live="polite">{voice.interim}</p> : null}

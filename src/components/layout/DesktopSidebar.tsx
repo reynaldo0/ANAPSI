@@ -36,7 +36,7 @@ function isActive(pathname: string, href: string): boolean {
 }
 
 export function DesktopSidebar() {
-const pathname = usePathname();
+  const pathname = usePathname();
   const { activeProfile } = useAccessibilityProfile();
   const { user, loading, logout } = useAuth();
   const profileMeta = ACCESSIBILITY_PROFILES.find((p) => p.value === activeProfile);
@@ -55,7 +55,9 @@ const pathname = usePathname();
             <Accessibility className="h-6 w-6" />
           </span>
           <span className="min-w-0">
-            <span className="label-uppercase block text-lg tracking-tight text-primary">{APP_NAME}</span>
+            <span className="label-uppercase block text-lg tracking-tight text-primary">
+              {APP_NAME}
+            </span>
           </span>
         </Link>
 
@@ -74,11 +76,16 @@ const pathname = usePathname();
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "group relative flex items-center gap-3 rounded-12 px-3 py-2.5 transition-colors",
-                    active ? "bg-primary-soft text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    active
+                      ? "bg-primary-soft text-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
                   )}
                 >
                   {active ? (
-                    <span aria-hidden="true" className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-full bg-accent" />
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-full bg-accent"
+                    />
                   ) : null}
                   <span
                     aria-hidden="true"
@@ -92,7 +99,12 @@ const pathname = usePathname();
                     </span>
                     <span className="block truncate text-sm font-bold">{item.label}</span>
                   </span>
-                  {active ? <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" /> : null}
+                  {active ? (
+                    <span
+                      aria-hidden="true"
+                      className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
+                    />
+                  ) : null}
                 </Link>
               </li>
             );
@@ -155,7 +167,9 @@ const pathname = usePathname();
           {loading ? null : user ? (
             <div className="flex items-center justify-between gap-2 rounded-12 border border-border/60 bg-background/60 px-3 py-2">
               <Link href="/profile" className="flex min-w-0 items-center gap-2">
-                <span className="min-w-0 truncate text-sm font-bold hover:text-primary">{user.displayName}</span>
+                <span className="min-w-0 truncate text-sm font-bold hover:text-primary">
+                  {user.displayName}
+                </span>
                 {user.role === "ADMIN" ? (
                   <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-primary">
                     Admin

@@ -579,7 +579,7 @@ export function JourneyMap({ route, stepIndex, onStepReached, onNext, onPrev }: 
               ? "GPS tidak didukung perangkat ini. Gunakan tombol navigasi."
               : "Menunggu sinyal GPS."}
       </p>
-      <p className="absolute bottom-1 left-3 z-10 text-[11px] text-slate-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+      <p className="absolute bottom-2 left-3 z-10 max-w-[calc(100%-1.5rem)] rounded-8 bg-black/60 px-2.5 py-1 text-xs font-medium text-white shadow-soft">
         Garis biru: rute kamu. Garis kuning: guiding block. Titik biru berdenyut: posisimu.
       </p>
     </div>

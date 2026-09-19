@@ -49,11 +49,40 @@ export function DestinationSheet({ open, origin, profile, onClose, onSelectPlace
   const [error, setError] = useState<string | null>(null);
   const [fallback, setFallback] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
+    restoreFocusRef.current = document.activeElement as HTMLElement | null;
     const timer = setTimeout(() => inputRef.current?.focus(), 50);
-    return () => clearTimeout(timer);
+    const trapTab = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const node = sheetRef.current;
+      if (!node) return;
+      const focusables = Array.from(
+        node.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", trapTab);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("keydown", trapTab);
+      restoreFocusRef.current?.focus?.();
+      restoreFocusRef.current = null;
+    };
   }, [open]);
 
   useEffect(() => {
@@ -122,7 +151,7 @@ export function DestinationSheet({ open, origin, profile, onClose, onSelectPlace
         onClick={onClose}
         className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
       />
-      <div className="relative flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-24 border border-border bg-card shadow-float animate-slide-up sm:mx-4 sm:mb-0 sm:max-w-xl sm:rounded-24">
+      <div ref={sheetRef} className="relative flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-24 border border-border bg-card shadow-float animate-slide-up sm:mx-4 sm:mb-0 sm:max-w-xl sm:rounded-24">
         <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
           <div className="flex min-w-0 items-center gap-3">
             <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-14 primary-solid text-primary-foreground">

@@ -275,7 +275,7 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
             </button>
           </div>
         ) : null}
-        <div className="hidden flex-col gap-2 md:flex">
+        <div className="flex flex-col gap-2">
           <button type="button" onClick={() => setIs3D((v) => !v)} aria-pressed={is3D} aria-label={is3D ? "Matikan tampilan 3D" : "Aktifkan tampilan 3D"} className={`inline-flex h-11 items-center gap-2 rounded-12 border px-3 text-sm font-bold shadow-float ${is3D ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"}`}>
             <Box className="h-4 w-4" aria-hidden="true" /> {is3D ? "3D Aktif" : "2D"}
           </button>

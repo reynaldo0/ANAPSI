@@ -61,7 +61,7 @@ export default async function CommunityPage() {
               <li key={stat.label} className="rounded-16 bg-white/10 px-2 py-3 text-center">
                 <stat.icon className="mx-auto h-5 w-5 text-white/80" aria-hidden="true" />
                 <p className="mt-1 text-h3 font-black">{stat.value}</p>
-                <p className="mt-0.5 text-[11px] font-semibold text-white/80">{stat.label}</p>
+                <p className="mt-0.5 text-xs font-semibold text-white/80">{stat.label}</p>
               </li>
             ))}
           </ul>

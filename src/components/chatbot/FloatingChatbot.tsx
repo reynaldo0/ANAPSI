@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bot, X, Mic, Send, Volume2, Maximize2 } from "lucide-react";
@@ -13,10 +13,29 @@ export function FloatingChatbot() {
   const [msgs, setMsgs] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const audio = useAudioManager();
-  const voice = useSpeechRecognition();
+  const sendRef = useRef<(text: string) => Promise<void>>(async () => {});
+  const utteranceRef = useRef<(text: string) => void>(() => {});
+  const micSuspendRef = useRef<() => void>(() => {});
+  const voice = useSpeechRecognition(undefined, {
+    endPointerMs: 1000,
+    onUserSpeaking: () => audio.stop(),
+    onUtterance: (text) => utteranceRef.current(text),
+  });
   const panelRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
-  if (pathname === "/map") return null;
+
+  const handleUtterance = useCallback((text: string) => {
+    void sendRef.current(text);
+    micSuspendRef.current?.();
+  }, []);
+
+  useEffect(() => {
+    utteranceRef.current = handleUtterance;
+  }, [handleUtterance]);
+
+  useEffect(() => {
+    micSuspendRef.current = voice.suspend;
+  }, [voice.suspend]);
 
   const send = async (text: string) => {
     const t = text.trim();
@@ -35,6 +54,12 @@ export function FloatingChatbot() {
     } catch { setMsgs((m) => [...m, { role: "assistant", content: "Gagal menghubungi asisten. Coba lagi." }]); } finally { setLoading(false); }
   };
 
+  useEffect(() => {
+    sendRef.current = send;
+  });
+
+  if (pathname === "/map") return null;
+
   return (
     <>
       <button
@@ -44,7 +69,7 @@ export function FloatingChatbot() {
         aria-label={open ? "Tutup chatbot tunanetra" : "Buka chatbot tunanetra — teman ngobrol suara"}
         aria-expanded={open}
         aria-haspopup="dialog"
-        className="fixed bottom-20 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full border-2 border-primary bg-primary text-primary-foreground shadow-float hover:bg-primary-hover focus-visible:outline-offset-2 md:bottom-6"
+        className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full border-2 border-primary bg-primary text-primary-foreground shadow-float hover:bg-primary-hover focus-visible:outline-offset-2 md:bottom-6"
       >
         {open ? <X className="h-6 w-6" /> : <Bot className="h-6 w-6" />}
       </button>
@@ -54,7 +79,7 @@ export function FloatingChatbot() {
           role="dialog"
           aria-label="Chatbot tunanetra mengambang"
           aria-modal="false"
-          className="fixed bottom-36 right-4 z-50 flex h-[420px] w-[92vw] max-w-[360px] flex-col overflow-hidden rounded-16 border-2 border-border bg-card shadow-float md:bottom-6"
+          className="fixed bottom-[calc(9rem+env(safe-area-inset-bottom,0px))] right-4 z-50 flex h-[420px] max-h-[70dvh] w-[92vw] max-w-[360px] flex-col overflow-hidden rounded-16 border-2 border-border bg-card shadow-float md:bottom-6"
         >
           <div className="flex items-center justify-between border-b border-border bg-primary-soft px-3 py-2">
             <p className="flex items-center gap-2 text-sm font-black text-primary"><Bot className="h-4 w-4" /> Chatbot Tunanetra</p>
@@ -63,7 +88,7 @@ export function FloatingChatbot() {
               <button type="button" aria-label="Tutup" onClick={() => setOpen(false)} className="rounded-8 p-2 hover:bg-muted"><X className="h-4 w-4" /></button>
             </div>
           </div>
-          <div role="log" aria-live="polite" className="flex-1 space-y-2 overflow-y-auto p-3">
+          <div aria-label="Riwayat chat" role="log" aria-live="off" className="flex-1 space-y-2 overflow-y-auto p-3">
             {msgs.length === 0 ? <p className="rounded-12 bg-muted px-3 py-2 text-sm text-muted-foreground">Halo! Tekan mikrofon lalu bicara, atau ketik. Saya jawab singkat dan bisa dibacakan.</p> : msgs.map((m, i) => (
               <div key={i} className={`max-w-[85%] rounded-12 px-3 py-2 text-sm ${m.role === "user" ? "ml-auto bg-primary text-primary-foreground" : "border border-border bg-card"}`}>{m.content}</div>
             ))}

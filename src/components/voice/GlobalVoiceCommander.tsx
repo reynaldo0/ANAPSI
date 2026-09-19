@@ -24,10 +24,15 @@ function parseIntent(text: string): { action: string; arg?: string } | null {
   if (t.includes("kembali")) return { action: "back" };
   if (t.includes("beranda") || /^home/.test(t)) return { action: "home" };
   if (t.includes("profil")) return { action: "profile" };
+  if (t.includes("komunitas")) return { action: "community" };
+  if (t.includes("simpanan") || t.includes("tersimpan") || t.includes("favorit")) return { action: "saved" };
+  if (t.includes("perjalanan")) return { action: "journey" };
+  if (t.includes("pengaturan") || t.includes("settings")) return { action: "settings" };
+  if (t.includes("panduan") || t.includes("tutorial")) return { action: "tutorial" };
   return null;
 }
 
-const HANDS_FREE_PAGES = new Set(["/", "/map"]);
+const HANDS_FREE_PAGES = new Set(["/", "/map", "/assistant"]);
 
 function loadStoredHandsFree(): boolean {
   if (typeof window === "undefined") return false;
@@ -62,6 +67,10 @@ export function GlobalVoiceCommander() {
     denied: "Mikrofon ditolak.",
     noSpeech: "Tidak ada suara. Coba lagi.",
     interim: (s) => `Mendengar: ${s}`,
+  }, {
+    // Barge-in: begitu pengguna mulai bicara, hentikan suara AI yang sedang
+    // membalas supaya pengguna TIDAK pernah terpotong atau ditimpa.
+    onUserSpeaking: () => audio.stop(),
   });
   const storedHandsFree = useStoredValue(loadStoredHandsFree, false);
   const [handsFreeOverride, setHandsFreeOverride] = useState<boolean | null>(null);
@@ -95,7 +104,7 @@ export function GlobalVoiceCommander() {
 
   // Umumkan navigasi — setiap perpindahan halaman ada suara (2 arah: aksi -> suara)
   useEffect(() => {
-    const names: Record<string, string> = { "/": "Beranda", "/map": "Peta", "/report": "Lapor hambatan", "/route": "Cari rute", "/assistant": "Asisten", "/chatbot": "Chatbot" };
+    const names: Record<string, string> = { "/": "Beranda", "/map": "Peta", "/report": "Lapor hambatan", "/route": "Cari rute", "/assistant": "Asisten", "/chatbot": "Chatbot", "/community": "Komunitas", "/saved": "Simpanan saya", "/journey": "Perjalanan saya", "/settings": "Pengaturan", "/tutorial": "Panduan" };
     const name = names[pathname] ?? pathname;
     if (pathname) announceLiveRegion(`Membuka ${name}`);
   }, [pathname]);
@@ -140,7 +149,7 @@ export function GlobalVoiceCommander() {
       setLastHeard(fresh);
       const intent = parseIntent(fresh);
       if (!intent) {
-        speak("Perintah tidak dikenali. Coba: Cari rumah sakit, Buka peta, Rute ke halte, atau Bantuan.");
+        speak("Perintah tidak dikenali. Coba: cari rumah sakit, buka peta, rute ke halte, lapor hambatan, komunitas, perjalanan, atau bantuan.");
         return;
       }
       try {
@@ -181,7 +190,7 @@ export function GlobalVoiceCommander() {
           router.push("/chatbot");
           break;
         case "help":
-          speak("Perintah tersedia: cari, buka peta, rute ke, laporkan, chatbot, beranda, ulangi, berhenti, kembali. Mode suara langsung menyala — katakan perintah kapan saja.");
+          speak("Perintah tersedia: cari, buka peta, rute ke, laporkan, chatbot, komunitas, perjalanan saya, simpanan, pengaturan, panduan, beranda, ulangi, berhenti, kembali. Mode suara langsung menyala — katakan perintah kapan saja.");
           break;
         case "back":
           speak("Kembali ke halaman sebelumnya");
@@ -194,6 +203,26 @@ export function GlobalVoiceCommander() {
         case "profile":
           speak("Membuka profil");
           router.push("/profile");
+          break;
+        case "community":
+          speak("Membuka komunitas");
+          router.push("/community");
+          break;
+        case "saved":
+          speak("Membuka simpanan saya");
+          router.push("/saved");
+          break;
+        case "journey":
+          speak("Membuka perjalanan saya");
+          router.push("/journey");
+          break;
+        case "settings":
+          speak("Membuka pengaturan");
+          router.push("/settings");
+          break;
+        case "tutorial":
+          speak("Membuka panduan");
+          router.push("/tutorial");
           break;
       }
     };
@@ -236,7 +265,7 @@ export function GlobalVoiceCommander() {
       : "Tekan mic, ucapkan perintah";
 
   return (
-    <div role="region" aria-label="Komando suara global 2 arah" data-tour="voice" className={`fixed left-2 z-[80] flex items-center gap-2 rounded-full border-2 border-border bg-card px-2 py-1 shadow-float ${pathname === "/map" ? "bottom-32 md:bottom-44" : "bottom-24 md:bottom-4"}`}>
+    <div role="region" aria-label="Komando suara global 2 arah" data-tour="voice" className={`fixed left-2 z-[60] flex items-center gap-2 rounded-full border-2 border-border bg-card px-2 py-1 shadow-float ${pathname === "/map" ? "bottom-[calc(9rem+env(safe-area-inset-bottom,0px))] md:bottom-[calc(11rem+env(safe-area-inset-bottom,0px))]" : "bottom-[calc(6rem+env(safe-area-inset-bottom,0px))] md:bottom-4"}`}>
       <button
         type="button"
         onClick={toggleHandsFree}

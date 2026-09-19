@@ -412,6 +412,18 @@ export function MapPageController() {
     firstMenuItemRef.current?.focus();
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") closeMenu();
+      const nav = event.key === "ArrowDown" || event.key === "ArrowRight" || event.key === "ArrowUp" || event.key === "ArrowLeft" || event.key === "Home" || event.key === "End";
+      if (!nav) return;
+      event.preventDefault();
+      const items = Array.from(document.querySelectorAll<HTMLAnchorElement>("#map-main-menu a[role='menuitem']"));
+      if (items.length === 0) return;
+      const activeIndex = items.findIndex((el) => el === document.activeElement || el.contains(document.activeElement));
+      let next = activeIndex;
+      if (event.key === "ArrowDown" || event.key === "ArrowRight") next = (activeIndex + 1) % items.length;
+      else if (event.key === "ArrowUp" || event.key === "ArrowLeft") next = (activeIndex - 1 + items.length) % items.length;
+      else if (event.key === "Home") next = 0;
+      else if (event.key === "End") next = items.length - 1;
+      items[next]?.focus();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -714,8 +726,8 @@ export function MapPageController() {
                     <Accessibility className="h-5 w-5" />
                   </span>
                   <div className="hidden shrink-0 lg:block">
-                    <p className="label-uppercase text-[11px] leading-none text-primary">Peta Aksesibilitas</p>
-                    <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground">3D realtime</p>
+                    <p className="label-uppercase text-xs leading-none text-primary">Peta Aksesibilitas</p>
+                    <p className="mt-0.5 text-[11px] leading-tight text-muted-foreground">3D realtime</p>
                   </div>
                   <div className="order-2 min-w-0 flex-[1_1_100%] sm:order-none sm:min-w-40 sm:flex-[1_1_220px] lg:min-w-56">
                     <SearchInput
@@ -772,6 +784,7 @@ export function MapPageController() {
                     type="button"
                     aria-label="Tutup menu utama"
                     onClick={closeMenu}
+                    tabIndex={-1}
                     className="fixed inset-0 cursor-default bg-black/10"
                   />
                   <nav
@@ -851,7 +864,7 @@ export function MapPageController() {
               </div>
 
               {/* Panel bawah (mobile) */}
-              <div className="absolute inset-x-0 bottom-0 z-30 p-3 md:hidden">
+              <div className="absolute inset-x-0 bottom-0 z-30 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] md:hidden">
                 {mobileOpen ? (
                   <div className="pointer-events-auto overflow-hidden rounded-20 border border-border/60 bg-card/90 shadow-float backdrop-blur">
                     <div className="flex items-center justify-between gap-2 border-b border-border/60 px-3 py-2">

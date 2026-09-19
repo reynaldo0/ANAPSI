@@ -202,19 +202,35 @@ export function OnboardingStoryboard({ profile, autoSpeak = true }: OnboardingSt
         </button>
       </article>
 
-      <div className="grid grid-cols-6 gap-2" role="tablist" aria-label="Pilih langkah tutorial">
+      <div
+        className="flex items-center justify-center gap-1"
+        role="group"
+        aria-label="Langkah tutorial"
+        onKeyDown={(event) => {
+          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+          event.preventDefault();
+          const next = event.key === "ArrowRight" ? Math.min(index + 1, frames.length - 1) : Math.max(index - 1, 0);
+          setIndex(next);
+          announceLiveRegion(`Langkah ${next + 1}: ${frames[next].title}`);
+          document.getElementById(`onboard-step-${next}`)?.focus();
+        }}
+      >
         {frames.map((f, i) => (
           <button
             key={f.title}
+            id={`onboard-step-${i}`}
             type="button"
+            tabIndex={i === index ? 0 : -1}
             onClick={() => { setIndex(i); announceLiveRegion(`Langkah ${i + 1}: ${f.title}`); }}
             aria-current={i === index ? "step" : undefined}
             aria-label={`Langkah ${i + 1}: ${f.title}`}
             className={cn(
-              "h-3 rounded-full transition-all",
-              i === index ? "primary-solid shadow-card" : "bg-input hover:bg-muted-foreground",
+              "flex h-10 w-10 items-center justify-center rounded-full transition-colors focus-visible:outline-offset-2",
+              i === index ? "bg-primary text-primary-foreground shadow-card" : "bg-muted text-muted-foreground hover:bg-muted-foreground/25",
             )}
-          />
+          >
+            <span aria-hidden="true" className={cn("h-2.5 w-2.5 rounded-full", i === index ? "bg-current" : "bg-current opacity-60")} />
+          </button>
         ))}
       </div>
 
