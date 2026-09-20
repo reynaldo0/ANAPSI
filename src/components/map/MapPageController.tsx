@@ -721,7 +721,7 @@ export function MapPageController() {
                 <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 border-b border-border/50 bg-card/90 px-2 py-2 shadow-soft backdrop-blur sm:gap-2.5">
                   <span
                     aria-hidden="true"
-                    className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-12 bg-card shadow-card sm:h-11 sm:w-11"
+                    className="hidden h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-12 bg-card shadow-card sm:flex sm:h-11 sm:w-11"
                   >
                     <img src="/logo.png" alt="" className="h-full w-full object-contain" />
                   </span>
@@ -950,8 +950,8 @@ export function MapPageController() {
                 )}
               </div>
 
-              {/* Status bawah (desktop) */}
-              <div className="pointer-events-none absolute bottom-40 left-3 z-10 hidden items-center gap-2 md:flex">
+              {/* Status bawah (desktop) — di atas dock gerakan kiri bawah */}
+              <div className="pointer-events-none absolute bottom-[12.5rem] left-3 z-10 hidden items-center gap-2 md:flex">
                 <p className="pointer-events-auto rounded-12 border border-border/60 bg-card/85 px-3 py-1.5 text-xs text-muted-foreground shadow-float backdrop-blur">
                   {currentLocationLabel
                     ? `Posisi awal: ${currentLocationLabel}`

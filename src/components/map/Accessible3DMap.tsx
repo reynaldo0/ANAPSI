@@ -167,13 +167,48 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
 
   useEffect(() => {
     if (!currentLocation || !loaded) return;
-    try { (mapRef.current as { flyTo?: (o:unknown)=>void})?.flyTo?.({ center: [currentLocation.lng, currentLocation.lat], zoom: 16, duration: 1200 }); } catch {}
+    try {
+      (mapRef.current as { flyTo?: (o: unknown) => void })?.flyTo?.({
+        center: [currentLocation.lng, currentLocation.lat],
+        zoom: 16,
+        duration: 1200,
+        essential: true,
+      });
+    } catch {}
   }, [currentLocation, loaded]);
 
   useEffect(() => {
     if (!focus || !loaded) return;
-    try { (mapRef.current as { flyTo?: (o:unknown)=>void})?.flyTo?.({ center: [focus.lng, focus.lat], zoom: 16, duration: 1200 }); } catch {}
+    try {
+      (mapRef.current as { flyTo?: (o: unknown) => void })?.flyTo?.({
+        center: [focus.lng, focus.lat],
+        zoom: 16,
+        duration: 1200,
+        essential: true,
+      });
+    } catch {}
   }, [focus, loaded]);
+
+  // Pusatkan peta ke tempat yang dipilih (dari pin, daftar hasil, atau panel
+  // bawah mobile) dengan tetap mempertahankan posisi lokasiku. `essential`
+  // membuat animasi tidak bisa diinterupsi, jadi titik akhir benar-benar presisi.
+  const lastCenteredPlaceRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!selectedPlaceId || !loaded) return;
+    const place = places.find((p) => p.id === selectedPlaceId);
+    if (!place) return;
+    if (lastCenteredPlaceRef.current === selectedPlaceId) return;
+    lastCenteredPlaceRef.current = selectedPlaceId;
+    try {
+      (mapRef.current as { flyTo?: (o: unknown) => void })?.flyTo?.({
+        center: [place.lng, place.lat],
+        zoom: 15.5,
+        duration: 800,
+        essential: true,
+      });
+      announceLiveRegion(`Peta difokuskan ke ${place.name}.`);
+    } catch {}
+  }, [selectedPlaceId, places, loaded]);
 
   // Render markers as HTML markers (accessible) via effect
   useEffect(() => {
@@ -300,22 +335,23 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
       />
       {!loaded ? <div className="absolute inset-0 grid place-items-center bg-muted/60 text-sm text-muted-foreground">Memuat peta 3D gratis…</div> : null}
 
-      {/* Dock gerakan (arah) — pojok KANAN ATAS, di bawah tombol "Mau ke mana?" */}
+      {/* Dock gerakan (arah) — mobile: kiri atas kompak (peta tetap fokus),
+          desktop: kiri bawah */}
       <div
         className={cn(
           "absolute z-10",
-          "right-2 top-[calc(12rem+env(safe-area-inset-top,0px))] sm:top-[calc(12.25rem+env(safe-area-inset-top,0px))]",
+          "left-2 top-[calc(12rem+env(safe-area-inset-top,0px))]",
           "md:left-3 md:right-auto md:top-auto md:bottom-3",
         )}
       >
         {loaded ? (
-          <div className="grid grid-cols-3 gap-1 rounded-12 border-2 border-border bg-background p-2 shadow-float">
+          <div className="grid grid-cols-3 gap-0.5 rounded-12 border-2 border-border bg-background p-1.5 shadow-float sm:gap-1 sm:p-2">
             <span aria-hidden="true" />
             <button
               type="button"
               aria-label="Arahkan peta ke utara"
               onClick={() => panMap(0, panStep())}
-              className="flex h-11 w-11 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex h-10 w-10 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-11 sm:w-11"
             >
               <MoveUp className="h-5 w-5" aria-hidden="true" />
             </button>
@@ -324,7 +360,7 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
               type="button"
               aria-label="Arahkan peta ke barat"
               onClick={() => panMap(panStep(), 0)}
-              className="flex h-11 w-11 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex h-10 w-10 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-11 sm:w-11"
             >
               <MoveLeft className="h-5 w-5" aria-hidden="true" />
             </button>
@@ -333,7 +369,7 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
               aria-label="Kembalikan arah peta ke utara"
               onClick={resetNorth}
               title="Arah utara"
-              className="flex h-11 w-11 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex h-10 w-10 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-11 sm:w-11"
             >
               <Compass className="h-5 w-5" aria-hidden="true" />
             </button>
@@ -341,7 +377,7 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
               type="button"
               aria-label="Arahkan peta ke timur"
               onClick={() => panMap(-panStep(), 0)}
-              className="flex h-11 w-11 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex h-10 w-10 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-11 sm:w-11"
             >
               <MoveRight className="h-5 w-5" aria-hidden="true" />
             </button>
@@ -350,7 +386,7 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
               type="button"
               aria-label="Arahkan peta ke selatan"
               onClick={() => panMap(0, -panStep())}
-              className="flex h-11 w-11 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex h-10 w-10 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-11 sm:w-11"
             >
               <MoveDown className="h-5 w-5" aria-hidden="true" />
             </button>
@@ -359,7 +395,8 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
         ) : null}
       </div>
 
-      {/* Dock utilitas — kanan bawah (di atas panel bawah mobile) */}
+      {/* Dock utilitas satu kolom kompak — kanan bawah (di atas panel mobile):
+          Lokasi Saya → zoom → 3D → terrain (desktop saja). */}
       <div
         className={cn(
           "absolute right-3 z-10",
@@ -368,64 +405,62 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
         )}
       >
         {loaded ? (
-          <div className="flex flex-col gap-2 rounded-12 border-2 border-border bg-background p-2 shadow-float">
-            <div className="flex justify-center gap-2">
+          <div className="flex flex-col gap-1.5 rounded-14 border-2 border-border bg-background p-1.5 shadow-float">
+            <button
+              type="button"
+              aria-label="Lokasi saya"
+              title="Pusatkan peta ke lokasiku"
+              onClick={onLocate}
+              className="flex h-11 w-11 items-center justify-center rounded-10 text-primary transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Locate className="h-5 w-5" aria-hidden="true" />
+            </button>
+            <div className="flex justify-between gap-1.5">
               <button
                 type="button"
                 aria-label="Perbesar peta"
                 title="Perbesar"
                 onClick={() => zoomStep()}
-                className="flex h-11 w-11 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex h-10 w-10 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <Plus className="h-5 w-5" aria-hidden="true" />
+                <Plus className="h-4 w-4" aria-hidden="true" />
               </button>
               <button
                 type="button"
                 aria-label="Perkecil peta"
                 title="Perkecil"
                 onClick={() => zoomStep(false)}
-                className="flex h-11 w-11 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex h-10 w-10 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <Minus className="h-5 w-5" aria-hidden="true" />
+                <Minus className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
-            <div className="flex justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => setIs3D((v) => !v)}
-                aria-pressed={is3D}
-                aria-label={is3D ? "Matikan tampilan 3D" : "Aktifkan tampilan 3D"}
-                className={`inline-flex h-11 items-center gap-2 rounded-12 border px-3 text-sm font-bold shadow-float ${is3D ? "bg-primary text-primary-foreground border-primary" : "bg-background border-border"}`}
-              >
-                <Box className="h-4 w-4" aria-hidden="true" /> {is3D ? "3D Aktif" : "2D"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setTerrainOn((v) => !v)}
-                aria-pressed={terrainOn}
-                aria-label="Toggle terrain 3D"
-                className={`inline-flex h-11 items-center gap-2 rounded-12 border px-3 text-sm font-bold shadow-float ${terrainOn ? "bg-card border-border" : "bg-muted text-muted-foreground"}`}
-              >
-                <Layers3 className="h-4 w-4" aria-hidden="true" /> Terrain
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setIs3D((v) => !v)}
+              aria-pressed={is3D}
+              aria-label={is3D ? "Matikan tampilan 3D" : "Aktifkan tampilan 3D"}
+              title={is3D ? "Tampilan 3D aktif" : "Tampilan 3D nonaktif"}
+              className={cn(
+                "flex h-10 w-10 items-center justify-center rounded-10 border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                is3D ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground hover:bg-muted",
+              )}
+            >
+              <Box className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setTerrainOn((v) => !v)}
+              aria-pressed={terrainOn}
+              aria-label={terrainOn ? "Matikan terrain 3D" : "Aktifkan terrain 3D"}
+              title={terrainOn ? "Terrain 3D aktif" : "Terrain 3D nonaktif"}
+              className="hidden h-10 w-10 items-center justify-center rounded-10 border border-border text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex"
+            >
+              <Layers3 className="h-4 w-4" aria-hidden="true" />
+            </button>
           </div>
         ) : null}
       </div>
-      {/* Lokasi saya — kiri bawah, terpisah dari dock utilitas agar tidak saling
-          menimpa dan tidak memenuhi satu sudut dengan banyak kontrol. */}
-      <button
-        type="button"
-        aria-label="Lokasi saya"
-        onClick={onLocate}
-        className={cn(
-          "absolute z-10 flex h-12 w-12 items-center justify-center rounded-12 border-2 border-border bg-background shadow-float hover:bg-muted",
-          "bottom-[calc(7.5rem+env(safe-area-inset-bottom,0px))] left-3",
-          "md:bottom-20",
-        )}
-      >
-        <Locate className="h-5 w-5" aria-hidden="true" />
-      </button>
       <p className="sr-only" role="status">Peta 3D aktif. Semua pin juga tersedia sebagai daftar teks yang dapat diakses keyboard di bawah peta.</p>
     </div>
   );
