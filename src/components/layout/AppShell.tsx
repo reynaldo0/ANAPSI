@@ -22,9 +22,23 @@ import { useOnlineStatus } from "@/lib/useOnlineStatus";
 import { OfflineBanner } from "@/components/layout/OfflineBanner";
 import { cn } from "@/lib/cn";
 
-const FIRST_VISIT_BYPASS = new Set(["/onboarding", "/login", "/register", "/admin"]);
+/**
+ * Halaman yang TIDAK perlu redirect ke onboarding meski userType belum dipilih.
+ * Termasuk semua halaman yang bisa diakses tanpa profil aksesibilitas,
+ * khususnya /profile dan /settings agar user bisa set profil dari sana.
+ */
+const FIRST_VISIT_BYPASS = new Set([
+  "/onboarding",
+  "/login",
+  "/register",
+  "/admin",
+  "/profile",   // halaman pengaturan — justru tempat user memilih profil
+  "/settings",  // pengaturan tampilan — tidak butuh profil
+  "/tutorial",  // tutorial bisa dibuka siapa saja
+]);
 
-/** Pengguna baru diarahkan memilih "Kamu siapa?" sebelum masuk ke halaman lain. */
+/** Pengguna baru diarahkan memilih "Kamu siapa?" sebelum masuk ke halaman lain.
+ *  Guard ini hanya aktif di halaman yang benar-benar butuh profil (peta, rute, dll). */
 function FirstVisitGate() {
   const pathname = usePathname();
   const router = useRouter();
@@ -33,7 +47,9 @@ function FirstVisitGate() {
   useEffect(() => {
     if (!ready) return;
     if (userType !== null) return;
+    // Cek prefix juga untuk sub-halaman admin
     if (FIRST_VISIT_BYPASS.has(pathname)) return;
+    if (pathname.startsWith("/admin")) return;
     router.replace("/onboarding");
   }, [ready, userType, pathname, router]);
 

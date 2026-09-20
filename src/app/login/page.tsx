@@ -43,11 +43,21 @@ function LoginForm() {
 
     toast({ tone: "success", title: "Berhasil masuk", message: "Selamat datang kembali!" });
     announceLiveRegion("Kamu berhasil masuk.", { assertive: true });
-    const safeReturnTo =
-      returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/profile";
 
-    // Gunakan window.location untuk hard navigation — memastikan AuthContext
-    // ter-refresh dan tidak ada race condition dengan React state flush.
+    // Tentukan tujuan redirect:
+    // - kalau ada returnTo yang valid → pakai itu
+    // - kalau userType sudah dipilih sebelumnya → langsung ke /profile
+    // - kalau belum pernah pilih profil → ke /onboarding dulu
+    const hasProfile =
+      typeof window !== "undefined" &&
+      !!localStorage.getItem("anapsi:userType");
+
+    const defaultDest = hasProfile ? "/profile" : "/onboarding";
+    const safeReturnTo =
+      returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
+        ? returnTo
+        : defaultDest;
+
     window.location.replace(safeReturnTo);
   };
 
