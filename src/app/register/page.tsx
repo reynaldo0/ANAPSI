@@ -52,9 +52,9 @@ export default function RegisterPage() {
       message: "Sekarang pilih profil aksesibilitasmu.",
     });
 
-    // router.replace ke /profile — halaman itu menangani semua state.
-    // Kalau userType belum dipilih, profile page tetap tampil dengan pilihan profil.
-    router.replace("/profile");
+    // window.location.href memastikan halaman /profile di-load fresh
+    // dengan cookie sesi yang sudah di-set, reliable di semua browser termasuk mobile.
+    window.location.href = "/profile";
   };
 
   return (

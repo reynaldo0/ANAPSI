@@ -44,15 +44,15 @@ function LoginForm() {
     toast({ tone: "success", title: "Berhasil masuk", message: "Selamat datang kembali!" });
     announceLiveRegion("Kamu berhasil masuk.", { assertive: true });
 
-    // Selalu arahkan ke /profile setelah login — halaman itu sudah menangani
-    // semua state (onboarding, guest, logged-in) tanpa perlu redirect lanjutan.
     const safeReturnTo =
       returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
         ? returnTo
         : "/profile";
 
-    // router.replace (soft nav) mempertahankan React state — tidak perlu hard reload.
-    router.replace(safeReturnTo);
+    // window.location.href (bukan replace) agar browser benar-benar reload
+    // halaman tujuan dengan cookie sesi yang sudah di-set backend.
+    // Ini lebih reliable di mobile dibanding router.replace.
+    window.location.href = safeReturnTo;
   };
 
   return (

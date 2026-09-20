@@ -30,7 +30,10 @@ const nextConfig: NextConfig = {
   rewrites() {
     return [
       {
-        source: "/api/:path*",
+        // /api/auth/* ditangani oleh Next.js Route Handlers (src/app/api/auth/*)
+        // agar Set-Cookie header dari backend diteruskan dengan benar ke browser.
+        // Semua route API lainnya tetap di-proxy langsung ke Go backend.
+        source: "/api/:path((?!auth/).*)",
         destination: `${apiTarget()}/api/:path*`,
       },
     ];
