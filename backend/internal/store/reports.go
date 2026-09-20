@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"blindspot/backend/internal/auth"
-	"blindspot/backend/internal/database"
-	"blindspot/backend/internal/errs"
-	"blindspot/backend/internal/model"
-	"blindspot/backend/internal/util"
+	"anapsi/backend/internal/auth"
+	"anapsi/backend/internal/database"
+	"anapsi/backend/internal/errs"
+	"anapsi/backend/internal/model"
+	"anapsi/backend/internal/util"
 )
 
 // ReportMediaInfo is a photo/attachment attached to a report.

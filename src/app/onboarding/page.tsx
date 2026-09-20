@@ -81,13 +81,13 @@ export default function OnboardingPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8">
-      <nav aria-label="Tahapan onboarding" className="flex items-center gap-2">
+      <nav aria-label="Tahapan onboarding" className="flex flex-wrap items-center gap-1.5 sm:gap-2">
         {STEP_LABELS.map((label, index) => (
           <span
             key={label}
             aria-current={index === step ? "step" : undefined}
             className={cn(
-              "flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-black",
+              "flex h-9 items-center gap-1.5 rounded-full px-2 text-[11px] font-black sm:px-3 sm:text-xs",
               index === step
                 ? "primary-solid text-primary-foreground shadow-card"
                 : index < step

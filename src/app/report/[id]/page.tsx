@@ -41,7 +41,7 @@ export default function ReportDetailPage() {
       try {
         const response = await fetch(`/api/reports/${params.id}`, { cache: "no-store" });
         if (response.status === 404) {
-          if (!cancelled) setError("Laporan tidak ditemukan.");
+          if (!cancelled) setError("Laporan ini sudah tidak tersedia atau telah dihapus.");
           return;
         }
         if (!response.ok) {

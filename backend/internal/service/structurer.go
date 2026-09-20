@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"blindspot/backend/internal/model"
+	"anapsi/backend/internal/model"
 )
 
 // StructuredReport is the extracted report fields from a voice transcript.

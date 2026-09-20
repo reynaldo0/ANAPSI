@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"blindspot/backend/internal/auth"
-	"blindspot/backend/internal/config"
-	"blindspot/backend/internal/errs"
-	"blindspot/backend/internal/util"
+	"anapsi/backend/internal/auth"
+	"anapsi/backend/internal/config"
+	"anapsi/backend/internal/errs"
+	"anapsi/backend/internal/util"
 )
 
 const maxBodyBytes = 32 << 20 // 32 MB: base64 report photos (3 × ~6.7 MB) + fields

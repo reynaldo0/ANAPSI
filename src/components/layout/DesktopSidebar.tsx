@@ -17,6 +17,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { ACCESSIBILITY_PROFILES, APP_NAME, APP_TAGLINE, NAV_ITEMS } from "@/lib/constants";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { useAccessibilityProfile } from "@/lib/state/ProfileContext";
 import { useAuth } from "@/lib/state/AuthContext";
 import { cn } from "@/lib/cn";
@@ -46,18 +47,8 @@ export function DesktopSidebar() {
       className="fixed inset-y-0 left-0 z-40 hidden w-72 flex-col border-r border-border/60 glass lg:flex"
     >
       <div className="flex h-full flex-col">
-        <Link href="/" className="flex items-center gap-3 px-5 pb-4 pt-6">
-          <span
-            aria-hidden="true"
-            className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-12 shadow-card"
-          >
-            <img src="/logo.png" alt="" className="h-11 w-11 object-contain" />
-          </span>
-          <span className="min-w-0">
-            <span className="label-uppercase block text-lg tracking-tight text-primary">
-              {APP_NAME}
-            </span>
-          </span>
+        <Link href="/" className="flex items-center gap-3 px-5 pb-4 pt-6" aria-label={`${APP_NAME} — beranda`}>
+          <BrandLogo size={40} withWordmark wordmarkClassName="text-lg text-primary" />
         </Link>
 
         <div className="px-5 pb-1">

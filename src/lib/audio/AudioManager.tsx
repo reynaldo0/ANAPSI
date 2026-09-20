@@ -12,7 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import { AudioPriority, type AudioRequest, type AudioStatus } from "@/types";
-import { createUtterance, getSpeechSynthesis } from "@/lib/audio/tts";
+import { createUtterance, getSpeechSynthesis, primeSpeechSynthesis } from "@/lib/audio/tts";
 import { useStoredValue } from "@/lib/state/useStoredValue";
 
 interface AudioManagerValue {
@@ -31,7 +31,7 @@ interface AudioManagerValue {
 
 const AudioContext = createContext<AudioManagerValue | null>(null);
 
-const AUDIO_STORAGE_KEY = "blindspot:audio";
+const AUDIO_STORAGE_KEY = "anapsi:audio";
 
 let requestSeq = 0;
 
@@ -89,12 +89,16 @@ export function AudioProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const synth = getSpeechSynthesis();
+    // Panas-panasi TTS begitu provider siap agar tutur pertama tidak tertunda.
+    primeSpeechSynthesis();
     const pump = () => {
       if (!synth) {
         currentRef.current = null;
         setStatus("unavailable");
         return;
       }
+      // Chrome quirk: terkadang speak() "menggantung" dalam keadaan paused.
+      if (synth.paused) synth.resume();
       if (currentRef.current) return;
       const next = queueRef.current.shift();
       if (!next) {

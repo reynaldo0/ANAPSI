@@ -169,7 +169,7 @@ export function GlobalVoiceCommander() {
         case "search":
           speak(`Mencari ${intent.arg}. Hasil tampil di peta dan daftar tempat terdekat. Katakan: cari tempat lain, atau bantuan.`);
           if (typeof window !== "undefined") {
-            window.dispatchEvent(new CustomEvent("blindspot:voice-search", { detail: { q: intent.arg ?? "" } }));
+            window.dispatchEvent(new CustomEvent("anapsi:voice-search", { detail: { q: intent.arg ?? "" } }));
           }
           router.push(`/map?q=${encodeURIComponent(intent.arg ?? "")}`);
           break;

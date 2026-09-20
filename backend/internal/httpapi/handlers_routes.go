@@ -4,13 +4,13 @@ import (
 	"math"
 	"net/http"
 
-	"blindspot/backend/internal/config"
-	"blindspot/backend/internal/demo"
-	"blindspot/backend/internal/errs"
-	"blindspot/backend/internal/model"
-	"blindspot/backend/internal/ratelimit"
-	"blindspot/backend/internal/service"
-	"blindspot/backend/internal/util"
+	"anapsi/backend/internal/config"
+	"anapsi/backend/internal/demo"
+	"anapsi/backend/internal/errs"
+	"anapsi/backend/internal/model"
+	"anapsi/backend/internal/ratelimit"
+	"anapsi/backend/internal/service"
+	"anapsi/backend/internal/util"
 )
 
 func isProfile(value interface{}) bool {

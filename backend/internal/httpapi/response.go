@@ -4,13 +4,26 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"blindspot/backend/internal/errs"
+	"anapsi/backend/internal/errs"
 )
 
 func writeJSON(w http.ResponseWriter, status int, body interface{}) {
 	w.Header().Set("Content-Type", "application/json")
+	buf, err := json.Marshal(body)
+	if err != nil {
+		// Encode gagal (mis. nilai NaN/+Inf dari perhitungan rute): kirim
+		// envelope error standar, jangan biarkan body terpotong/rusak.
+		buf, _ = json.Marshal(map[string]interface{}{
+			"ok": false,
+			"error": map[string]interface{}{
+				"code":    "INTERNAL_ERROR",
+				"message": "Respons gagal dibentuk oleh server. Silakan coba lagi.",
+			},
+		})
+		status = 500
+	}
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(body)
+	_, _ = w.Write(buf)
 }
 
 func ok(w http.ResponseWriter, data interface{}) {

@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useStoredValue } from "@/lib/state/useStoredValue";
 
-const STORAGE_KEY = "blindspot:sign-language";
+const STORAGE_KEY = "anapsi:sign-language";
 
 interface SignLanguageContextValue {
   enabled: boolean;

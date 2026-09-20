@@ -6,10 +6,10 @@ import (
 	"encoding/hex"
 	"strings"
 
-	"blindspot/backend/internal/auth"
-	"blindspot/backend/internal/database"
-	"blindspot/backend/internal/errs"
-	"blindspot/backend/internal/util"
+	"anapsi/backend/internal/auth"
+	"anapsi/backend/internal/database"
+	"anapsi/backend/internal/errs"
+	"anapsi/backend/internal/util"
 )
 
 // FindLoginUser resolves a registered user by normalized email. It returns

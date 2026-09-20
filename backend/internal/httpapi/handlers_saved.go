@@ -3,11 +3,11 @@ package httpapi
 import (
 	"net/http"
 
-	"blindspot/backend/internal/config"
-	"blindspot/backend/internal/errs"
-	"blindspot/backend/internal/ratelimit"
-	"blindspot/backend/internal/store"
-	"blindspot/backend/internal/util"
+	"anapsi/backend/internal/config"
+	"anapsi/backend/internal/errs"
+	"anapsi/backend/internal/ratelimit"
+	"anapsi/backend/internal/store"
+	"anapsi/backend/internal/util"
 )
 
 func handleSavedGet(w http.ResponseWriter, r *http.Request, cfg *config.Config) {

@@ -11,8 +11,8 @@ import {
 } from "react";
 import type { GamificationStats } from "@/types";
 
-const REPORTER_KEY = "blindspot:reporter";
-const GAMIFICATION_KEY = "blindspot:gamification";
+const REPORTER_KEY = "anapsi:reporter";
+const GAMIFICATION_KEY = "anapsi:gamification";
 
 export interface LocalGamificationState {
   reporterId: string;

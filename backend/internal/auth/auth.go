@@ -16,11 +16,11 @@ import (
 
 	"golang.org/x/crypto/scrypt"
 
-	"blindspot/backend/internal/util"
+	"anapsi/backend/internal/util"
 )
 
 const (
-	SessionCookieName   = "blindspot_session"
+	SessionCookieName   = "anapsi_session"
 	sessionTTL          = 7 * 24 * 60 * 60 * 1000 // ms
 	scryptKeyLength     = 64
 	scryptN             = 16384

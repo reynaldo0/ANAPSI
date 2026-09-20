@@ -3,9 +3,10 @@ package service
 import (
 	"sort"
 	"strings"
+	"unicode"
 
-	"blindspot/backend/internal/demo"
-	"blindspot/backend/internal/model"
+	"anapsi/backend/internal/demo"
+	"anapsi/backend/internal/model"
 )
 
 // EntranceInfo is the API shape of a place entrance.
@@ -236,7 +237,7 @@ func FilteredPlaces(query PlacesQuery, origin *model.LatLng) []*demo.Place {
 
 // PlaceToDetail assembles a full place page.
 func PlaceToDetail(place *demo.Place, profile *string) PlaceDetail {
-	scores := placeScores(place)
+scores := placeScores(place)
 	var factors []AccessFactor
 	if profile != nil && *profile != "" {
 		eval := PlaceEvaluation(place, *profile)
@@ -338,4 +339,81 @@ func MockFeatures(profile string, origin *model.LatLng) []MapFeatureReturn {
 		out = []MapFeatureReturn{}
 	}
 	return out
+}
+
+// FindPlaceLoose resolves a place by exact ID, then by a normalized ID suffix
+// ("halte", "osm-node-…", "geo-…") or display-name substring, so any clickable
+// link that carries a non-catalog ID still lands on the analyzed place instead
+// of a 404. Returns nil when nothing matches.
+func FindPlaceLoose(id string) *demo.Place {
+	if id == "" {
+		return nil
+	}
+	low := strings.ToLower(strings.TrimSpace(id))
+	cut := low
+	for _, prefix := range []string{
+		"place-", "osm-node-", "osm-way-", "osm-relation-",
+		"geo-node-", "geo-way-", "geo-relation-", "node-",
+	} {
+		if p := strings.TrimPrefix(low, prefix); p != "" && strings.HasPrefix(low, prefix) {
+			if len(p) < len(low) {
+				cut = p
+				break
+			}
+		}
+	}
+	for _, p := range demo.Places() {
+		if p.ID == id || strings.EqualFold(p.ID, id) {
+			return p
+		}
+		if strings.EqualFold(strings.TrimPrefix(p.ID, "place-"), cut) {
+			return p
+		}
+	}
+	for _, p := range demo.Places() {
+		hay := strings.ToLower(p.Name + " " + p.Address)
+		if strings.Contains(hay, cut) {
+			return p
+		}
+	}
+	return nil
+}
+
+// HumanizeID converts an opaque id like "osm-node-12345" into a readable
+// display name ("Osm Node 12345").
+func HumanizeID(id string) string {
+	out := ""
+	for _, part := range strings.FieldsFunc(id, func(r rune) bool { return r == '-' || r == '_' }) {
+		if part == "" {
+			continue
+		}
+		runes := []rune(part)
+		runes[0] = unicode.ToUpper(runes[0])
+		if out != "" {
+			out += " "
+		}
+		out += string(runes)
+	}
+	if out == "" {
+		return "Lokasi ini"
+	}
+	return out
+}
+
+// PlaceDetailForUnknown returns a graceful placeholder for place IDs that do
+// not (yet) have an accessibility analysis, so detail pages never 404.
+func PlaceDetailForUnknown(id string) PlaceDetail {
+	name := HumanizeID(id)
+	return PlaceDetail{
+		Summary: PlaceSummary{
+			ID: id, Name: name, Address: "", City: "", Category: "Belum dianalisis",
+			Lat: 0, Lng: 0, Score: map[string]*int{},
+		},
+		Description: "Tempat ini belum dianalisis oleh tim ANAPSI. Kamu tetap bisa melihatnya di peta, atau laporkan hambatan yang kamu temukan di lokasi.",
+		Score:       map[string]*int{},
+		Factors:     []AccessFactor{},
+		Entrances:   []EntranceInfo{},
+		Reports:     []ReportStub{},
+		Freshness:   "Belum ada data",
+	}
 }

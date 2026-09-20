@@ -8,12 +8,12 @@ export const metadata: Metadata = {
 
 export default function AdminPage() {
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8">
+    <div>
       <header className="mb-6">
         <h1 className="text-h2 font-bold">Dashboard Admin</h1>
         <p className="mt-1 text-muted-foreground">
-          Kelola seluruh data ANAPSI: moderasi laporan, aksesibilitas tempat, akun pengguna,
-          dan pemantauan lokasi serta aktivitas terakhir secara realtime.
+          Monitor laporan, pengguna, dan lokasi pengguna secara realtime. Moderasilah laporan
+          aksesibilitas dari komunitas agar data tetap terpercaya.
         </p>
       </header>
       <main>

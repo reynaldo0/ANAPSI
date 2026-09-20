@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"blindspot/backend/internal/database"
-	"blindspot/backend/internal/util"
+	"anapsi/backend/internal/database"
+	"anapsi/backend/internal/util"
 )
 
 // BadgeDef describes a single gamification badge.

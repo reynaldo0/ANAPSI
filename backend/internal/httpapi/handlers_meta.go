@@ -3,8 +3,8 @@ package httpapi
 import (
 	"net/http"
 
-	"blindspot/backend/internal/config"
-	"blindspot/backend/internal/model"
+	"anapsi/backend/internal/config"
+	"anapsi/backend/internal/model"
 )
 
 // handleMetaLayers exposes the accessibility layer catalog (plus report

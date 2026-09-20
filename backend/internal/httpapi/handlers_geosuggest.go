@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"blindspot/backend/internal/config"
-	"blindspot/backend/internal/model"
-	"blindspot/backend/internal/service"
+	"anapsi/backend/internal/config"
+	"anapsi/backend/internal/model"
+	"anapsi/backend/internal/service"
 )
 
 func handleGeoSuggest(w http.ResponseWriter, r *http.Request, cfg *config.Config) {

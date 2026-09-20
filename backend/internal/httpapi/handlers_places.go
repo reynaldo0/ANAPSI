@@ -4,11 +4,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"blindspot/backend/internal/demo"
-	"blindspot/backend/internal/errs"
-	"blindspot/backend/internal/model"
-	"blindspot/backend/internal/service"
-	"blindspot/backend/internal/store"
+	"anapsi/backend/internal/model"
+	"anapsi/backend/internal/service"
+	"anapsi/backend/internal/store"
 )
 
 func handlePlacesGet(w http.ResponseWriter, r *http.Request) {
@@ -47,9 +45,15 @@ func handlePlacesGet(w http.ResponseWriter, r *http.Request) {
 
 func handlePlaceById(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	place := demo.FindPlace(id)
+	place := service.FindPlaceLoose(id)
 	if place == nil {
-		writeErr(w, errs.NotFound("Tempat tidak ditemukan."))
+		// Tidak pernah berikan 404 untuk halaman tempat: tampilkan halaman
+		// "belum dianalisis" yang ramah, tanpa error page.
+		ok(w, map[string]interface{}{
+			"place":      service.PlaceDetailForUnknown(id),
+			"unanalyzed": true,
+			"source":     "demo",
+		})
 		return
 	}
 	detail := service.PlaceToDetail(place, nil)
@@ -63,9 +67,9 @@ func handlePlaceAccessibility(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, validationErr(map[string]string{"profile": "Pilih profil visual atau kursi roda."}))
 		return
 	}
-	place := demo.FindPlace(id)
+	place := service.FindPlaceLoose(id)
 	if place == nil {
-		writeErr(w, errs.NotFound("Tempat tidak ditemukan."))
+		ok(w, map[string]interface{}{"placeId": id, "profile": profile, "evaluation": nil, "source": "demo"})
 		return
 	}
 	ok(w, map[string]interface{}{
@@ -78,9 +82,9 @@ func handlePlaceAccessibility(w http.ResponseWriter, r *http.Request) {
 
 func handlePlaceEntrances(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	place := demo.FindPlace(id)
+	place := service.FindPlaceLoose(id)
 	if place == nil {
-		writeErr(w, errs.NotFound("Tempat tidak ditemukan."))
+		ok(w, map[string]interface{}{"entrances": []service.EntranceInfo{}, "source": "demo"})
 		return
 	}
 	entrances := make([]service.EntranceInfo, 0, len(place.Entrances))

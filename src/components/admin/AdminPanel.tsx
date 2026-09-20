@@ -9,14 +9,12 @@ import { AdminOverviewTab } from "@/components/admin/AdminOverviewTab";
 import { AdminReportsTab } from "@/components/admin/AdminReportsTab";
 import { AdminUsersTab } from "@/components/admin/AdminUsersTab";
 import { AdminLocationsTab } from "@/components/admin/AdminLocationsTab";
-import { AdminPlacesTab } from "@/components/admin/AdminPlacesTab";
 
 const TABS = [
   { id: "ringkasan", label: "Ringkasan", icon: "📊", description: "Statistik umum & pemantauan cepat" },
   { id: "laporan", label: "Laporan", icon: "🗂", description: "Moderasi laporan aksesibilitas" },
   { id: "pengguna", label: "Pengguna", icon: "👥", description: "Kelola akun, peran & aktivitas" },
   { id: "lokasi", label: "Pemantauan Lokasi", icon: "📍", description: "Lokasi pengguna yang berbagi lokasi secara langsung" },
-  { id: "tempat", label: "Tempat", icon: "🏢", description: "Katalog tempat & skor aksesibilitas" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -130,7 +128,6 @@ export function AdminPanel() {
         {activeTab === "laporan" ? <AdminReportsTab /> : null}
         {activeTab === "pengguna" ? <AdminUsersTab /> : null}
         {activeTab === "lokasi" ? <AdminLocationsTab /> : null}
-        {activeTab === "tempat" ? <AdminPlacesTab /> : null}
       </div>
     </div>
   );

@@ -3,8 +3,8 @@ package store
 import (
 	"database/sql"
 
-	"blindspot/backend/internal/database"
-	"blindspot/backend/internal/util"
+	"anapsi/backend/internal/database"
+	"anapsi/backend/internal/util"
 )
 
 // GetUserAccessibilityProfile returns the chosen accessibility profile type

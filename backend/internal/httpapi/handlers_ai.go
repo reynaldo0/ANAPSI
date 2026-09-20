@@ -4,12 +4,12 @@ import (
 	"net/http"
 	"strings"
 
-	"blindspot/backend/internal/config"
-	"blindspot/backend/internal/errs"
-	"blindspot/backend/internal/model"
-	"blindspot/backend/internal/ratelimit"
-	"blindspot/backend/internal/service"
-	"blindspot/backend/internal/util"
+	"anapsi/backend/internal/config"
+	"anapsi/backend/internal/errs"
+	"anapsi/backend/internal/model"
+	"anapsi/backend/internal/ratelimit"
+	"anapsi/backend/internal/service"
+	"anapsi/backend/internal/util"
 )
 
 func handleAssistant(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
@@ -153,7 +153,7 @@ func handleChatbot(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		if len(bullets) > 3 {
 			bullets = bullets[:3]
 		}
-		contextText = "DATA BLINDSPOT: intent=" + ans.Intent + " | " + ans.AnswerText + " Bullets: " + strings.Join(bullets, "; ")
+		contextText = "DATA ANAPSI: intent=" + ans.Intent + " | " + ans.AnswerText + " Bullets: " + strings.Join(bullets, "; ")
 	}
 
 	if !service.GroqConfigured(cfg) {
@@ -167,7 +167,7 @@ func handleChatbot(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 			"reply":      reply,
 			"source":     "deterministic-fallback",
 			"context":    contextText,
-			"disclaimer": "Groq belum dikonfigurasi (set GROQ_API_KEY). Jawaban dari data BLINDSPOT deterministik.",
+			"disclaimer": "Groq belum dikonfigurasi (set GROQ_API_KEY). Jawaban dari data ANAPSI deterministik.",
 		})
 		return
 	}

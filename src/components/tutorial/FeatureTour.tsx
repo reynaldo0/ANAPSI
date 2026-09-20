@@ -270,8 +270,8 @@ export function FeatureTour() {
       const feature = (event as CustomEvent<TourFeature>).detail ?? "home";
       openTour(feature);
     };
-    window.addEventListener("blindspot:start-tour", handler);
-    return () => window.removeEventListener("blindspot:start-tour", handler);
+    window.addEventListener("anapsi:start-tour", handler);
+    return () => window.removeEventListener("anapsi:start-tour", handler);
   }, [openTour]);
 
   // Recalculate spotlight saat resize/scroll.

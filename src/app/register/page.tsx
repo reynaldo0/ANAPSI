@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/state/AuthContext";
 import { useToast } from "@/components/ui/Toast";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 
 interface FieldErrors {
   [field: string]: string;
@@ -53,8 +54,11 @@ export default function RegisterPage() {
 
   return (
     <div className="mx-auto w-full max-w-md px-4 py-8">
-      <h1 className="text-h1 font-black">Daftar</h1>
-      <p className="mt-2 text-muted-foreground">
+      <div className="mb-6 flex flex-wrap items-center justify-center gap-3">
+        <BrandLogo size={44} withWordmark wordmarkClassName="text-2xl text-primary" />
+      </div>
+      <h1 className="text-center text-h1 font-black">Daftar</h1>
+      <p className="mt-2 text-center text-muted-foreground">
         Buat akun untuk menyimpan profil aksesibilitas dan tempat favoritmu.
       </p>
 

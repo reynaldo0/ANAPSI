@@ -4,9 +4,9 @@ import (
 	"regexp"
 	"strings"
 
-	"blindspot/backend/internal/demo"
-	"blindspot/backend/internal/model"
-	"blindspot/backend/internal/util"
+	"anapsi/backend/internal/demo"
+	"anapsi/backend/internal/model"
+	"anapsi/backend/internal/util"
 )
 
 // AssistantAnswer is the deterministic assistant reply.
@@ -25,7 +25,7 @@ type AssistantPlace struct {
 	Name string `json:"name"`
 }
 
-// AssistantSource is a cited piece of BLINDSPOT data.
+// AssistantSource is a cited piece of ANAPSI data.
 type AssistantSource struct {
 	Type        string  `json:"type"`
 	Title       string  `json:"title"`
@@ -47,7 +47,7 @@ type AssistantRequest struct {
 
 const UNKNOWN_DATA_TEXT = "Belum tersedia cukup data untuk memastikan kondisi tersebut."
 
-const ASSISTANT_DISCLAIMER = "Asisten menjawab dari data BLINDSPOT (saat ini data demo untuk pengembangan, RULE 1) dan tidak mengarang kondisi aksesibilitas. Bedakan: terverifikasi / dilaporkan komunitas / belum terverifikasi."
+const ASSISTANT_DISCLAIMER = "Asisten menjawab dari data ANAPSI (saat ini data demo untuk pengembangan, RULE 1) dan tidak mengarang kondisi aksesibilitas. Bedakan: terverifikasi / dilaporkan komunitas / belum terverifikasi."
 
 var ALL_NOUNS = []string{
 	"ramp", "toilet", "musala", "guiding block", "guiding", "taktil",

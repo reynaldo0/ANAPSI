@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, MapPin, Navigation2 } from "lucide-react";
+import { ArrowLeft, MapPin, Megaphone, Navigation2 } from "lucide-react";
 import { AccessibilityScore } from "@/components/ui/AccessibilityScore";
 import { ReportCard } from "@/components/ui/ReportCard";
 import { LoadingState } from "@/components/ui/LoadingState";
@@ -17,12 +17,12 @@ import type { AccessibilityEvaluation, PlaceDetail } from "@/types";
 
 interface DetailResponse {
   ok: boolean;
-  data: { place: PlaceDetail; source: string };
+  data: { place: PlaceDetail; source: string; unanalyzed?: boolean };
 }
 
 interface EvaluationResponse {
   ok: boolean;
-  data: { evaluation: AccessibilityEvaluation; source: string };
+  data: { evaluation: AccessibilityEvaluation | null; source: string };
 }
 
 export default function PlaceDetailPage() {
@@ -33,6 +33,7 @@ export default function PlaceDetailPage() {
 
   const [detail, setDetail] = useState<PlaceDetail | null>(null);
   const [source, setSource] = useState<string | null>(null);
+  const [unanalyzed, setUnanalyzed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [evaluation, setEvaluation] = useState<AccessibilityEvaluation | null>(null);
@@ -43,18 +44,11 @@ export default function PlaceDetailPage() {
     async function load() {
       try {
         const response = await fetch(`/api/places/${params.id}`, { cache: "no-store" });
-        if (response.status === 404) {
-          if (!cancelled) setError("Tempat tidak ditemukan.");
-          return;
-        }
-        if (!response.ok) {
-          if (!cancelled) setError("Gagal memuat detail tempat.");
-          return;
-        }
         const body = (await response.json()) as DetailResponse;
         if (!cancelled) {
           setDetail(body.data.place);
           setSource(body.data.source);
+          setUnanalyzed(body.data.unanalyzed === true);
         }
       } catch {
         if (!cancelled) setError("Tidak dapat terhubung ke server. Coba lagi.");
@@ -69,7 +63,7 @@ export default function PlaceDetailPage() {
   }, [params.id]);
 
   const loadEvaluation = useCallback(async () => {
-    if (!activeProfile) {
+    if (!activeProfile || unanalyzed) {
       setEvaluation(null);
       setEvaluationError(null);
       return;
@@ -86,7 +80,7 @@ export default function PlaceDetailPage() {
     } catch {
       setEvaluationError("Skor aksesibilitas gagal dimuat.");
     }
-  }, [params.id, activeProfile]);
+  }, [params.id, activeProfile, unanalyzed]);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,6 +95,43 @@ export default function PlaceDetailPage() {
   }, [loadEvaluation]);
 
   if (loading) return <div className="mx-auto w-full max-w-3xl px-4 py-6"><LoadingState label="Memuat detail tempat." /></div>;
+
+  if (!error && unanalyzed && detail) {
+    return (
+      <div className="mx-auto w-full max-w-3xl px-4 py-6">
+        <Link
+          href="/map"
+          className="inline-flex items-center gap-1.5 text-sm font-bold text-primary underline underline-offset-2 hover:text-primary-hover"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Kembali ke peta
+        </Link>
+        <section className="mt-4 rounded-20 border-2 border-border bg-card p-5 shadow-card" aria-labelledby="place-heading">
+          <h1 id="place-heading" className="text-h1 font-black">
+            {detail.summary.name}
+          </h1>
+          <p className="mt-1 text-muted-foreground">Belum memiliki analisis aksesibilitas.</p>
+          <p className="mt-3 text-muted-foreground">{detail.description}</p>
+        </section>
+        <div className="mt-6 flex flex-wrap gap-3" role="group" aria-label="Aksi untuk tempat yang belum dianalisis">
+          <Link
+            href="/map"
+            className="inline-flex h-13 items-center justify-center gap-2 rounded-14 bg-primary px-6 font-bold text-primary-foreground shadow-card hover:bg-primary-hover"
+          >
+            <Navigation2 className="h-5 w-5" aria-hidden="true" />
+            Lihat di peta
+          </Link>
+          <Link
+            href="/report"
+            className="inline-flex h-13 items-center justify-center gap-2 rounded-14 border-2 border-border bg-card px-6 font-bold hover:bg-muted"
+          >
+            <Megaphone className="h-5 w-5 text-danger" aria-hidden="true" />
+            Laporkan hambatan
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (error || !detail)
     return (

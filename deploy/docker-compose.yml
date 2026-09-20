@@ -1,4 +1,4 @@
-# Blindspot production stack (VPS):
+# ANAPSI production stack (VPS):
 #   caddy (public TLS + reverse proxy) -> web (Next.js) -> backend (Go) -> db (MySQL)
 #
 # Setup:
@@ -9,7 +9,7 @@
 # Upgrade: docker compose up -d --build  (zero-downtime berkat container restart)
 # Slack space? mysql data persistent di named volume `dbdata`; lihat: docker volume ls
 
-name: blindspot
+name: anapsi
 
 services:
   db:
@@ -21,8 +21,8 @@ services:
       - --default-time-zone=+00:00
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
-      MYSQL_DATABASE: "blindspot"
-      MYSQL_USER: "blindspot"
+      MYSQL_DATABASE: "anapsi"
+      MYSQL_USER: "anapsi"
       MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
     volumes:
       - dbdata:/var/lib/mysql
@@ -39,7 +39,7 @@ services:
     restart: unless-stopped
     environment:
       PORT: "8080"
-      MYSQL_DSN: "blindspot:${MYSQL_PASSWORD}@tcp(db:3306)/blindspot?parseTime=true&charset=utf8mb4&collation=utf8mb4_unicode_ci"
+      MYSQL_DSN: "anapsi:${MYSQL_PASSWORD}@tcp(db:3306)/anapsi?parseTime=true&charset=utf8mb4&collation=utf8mb4_unicode_ci"
       AUTH_SECRET: "${AUTH_SECRET}"
       GROQ_API_KEY: "${GROQ_API_KEY:-}"
       APP_ORIGINS: "${APP_ORIGINS}"

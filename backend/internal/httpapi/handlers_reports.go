@@ -5,12 +5,12 @@ import (
 	"strconv"
 	"strings"
 
-	"blindspot/backend/internal/config"
-	"blindspot/backend/internal/errs"
-	"blindspot/backend/internal/model"
-	"blindspot/backend/internal/ratelimit"
-	"blindspot/backend/internal/store"
-	"blindspot/backend/internal/util"
+	"anapsi/backend/internal/config"
+	"anapsi/backend/internal/errs"
+	"anapsi/backend/internal/model"
+	"anapsi/backend/internal/ratelimit"
+	"anapsi/backend/internal/store"
+	"anapsi/backend/internal/util"
 )
 
 func validatePhotoDataUrl(url string) (bool, string) {

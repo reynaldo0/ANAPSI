@@ -83,7 +83,10 @@ function getFrames(profile: UserType | null): Frame[] {
   if (profile === "WHEELCHAIR_MOBILITY") return WHEELCHAIR_FRAMES;
   if (profile === "VISUAL_NAVIGATION") return VISUAL_FRAMES;
   if (profile === "NON_DISABLED") return STANDARD_FRAMES;
-  return VISUAL_FRAMES;
+  // Jangan default ke frame tunanetra: tanpa profil, tutorial TIDAK boleh
+  // terlihat/menyala seperti milik tunanetra (biang bug "pilihan jadi tuna
+  // netra doang").
+  return [];
 }
 
 function blankFrame(): Frame {
@@ -167,14 +170,14 @@ export function OnboardingStoryboard({ profile, autoSpeak = true }: OnboardingSt
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
         <p className="text-sm font-bold text-muted-foreground">
           Tutorial {index + 1} dari {frames.length}
         </p>
         <button
           type="button"
           onClick={speakAll}
-          className="inline-flex h-11 items-center gap-2 rounded-full border-2 border-border bg-card px-4 text-sm font-bold hover:bg-muted"
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-full border-2 border-border bg-card px-4 text-sm font-bold hover:bg-muted"
         >
           <Play className="h-4 w-4" aria-hidden="true" /> Putar semua
         </button>
@@ -184,10 +187,10 @@ export function OnboardingStoryboard({ profile, autoSpeak = true }: OnboardingSt
         aria-live="assertive"
         aria-label="Langkah tutorial"
         className={cn(
-          "flex min-h-[210px] flex-col gap-4 rounded-24 border-2 border-border bg-card p-6 shadow-card card-elevated",
+          "flex min-h-[180px] flex-col gap-4 rounded-24 border-2 border-border bg-card p-5 shadow-card card-elevated sm:min-h-[210px] sm:p-6",
         )}
       >
-        <span aria-hidden="true" className="text-5xl leading-none">{frame.icon}</span>
+        <span aria-hidden="true" className="text-[2.75rem] leading-none sm:text-5xl">{frame.icon}</span>
         <div>
           <h3 className="text-h2 font-black text-primary">{frame.title}</h3>
           <p className="mt-2 text-base leading-relaxed">{frame.body}</p>
@@ -239,7 +242,7 @@ export function OnboardingStoryboard({ profile, autoSpeak = true }: OnboardingSt
           type="button"
           onClick={() => setIndex((i) => Math.max(0, i - 1))}
           disabled={index === 0}
-          className="inline-flex h-12 items-center rounded-full border-2 border-border bg-card px-6 font-bold disabled:opacity-40"
+          className="inline-flex h-12 flex-1 items-center justify-center rounded-full border-2 border-border bg-card px-4 font-bold disabled:opacity-40 sm:flex-none sm:px-6"
         >
           Kembali
         </button>
@@ -247,7 +250,7 @@ export function OnboardingStoryboard({ profile, autoSpeak = true }: OnboardingSt
           type="button"
           onClick={() => index < frames.length - 1 && setIndex(index + 1)}
           disabled={index === frames.length - 1}
-          className="inline-flex h-12 items-center rounded-full primary-solid px-8 font-black text-primary-foreground shadow-soft disabled:opacity-40"
+          className="inline-flex h-12 flex-1 items-center justify-center rounded-full primary-solid px-6 font-black text-primary-foreground shadow-soft disabled:opacity-40 sm:flex-none sm:px-8"
         >
           Lanjut
         </button>

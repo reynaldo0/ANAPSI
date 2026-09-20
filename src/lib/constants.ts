@@ -1,7 +1,7 @@
 import type { AccessibilityProfileType, AffectedProfile, ReportCategory, Severity } from "@/types";
 import { Accessibility, Eye, Sparkles, type LucideIcon } from "lucide-react";
 
-export const APP_NAME = "ANAPSI";
+export const APP_NAME = "anapsi";
 export const APP_TAGLINE = "Navigate Beyond Barriers";
 
 /** Pilihan pertama saat membuka aplikasi: nondisabilitas atau penyandang disabilitas. */
@@ -57,11 +57,11 @@ export const ONBOARDING_CHOICES: readonly OnboardingChoiceMeta[] = [
 ];
 
 export const STORAGE_KEYS = {
-  appearance: "blindspot:appearance",
-  handsFree: "blindspot:handsFree",
-  profile: "blindspot:profile",
-  session: "blindspot:session",
-  userType: "blindspot:userType",
+  appearance: "anapsi:appearance",
+  handsFree: "anapsi:handsFree",
+  profile: "anapsi:profile",
+  session: "anapsi:session",
+  userType: "anapsi:userType",
 } as const;
 
 export const NAV_ITEMS = [

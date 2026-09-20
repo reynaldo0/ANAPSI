@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"blindspot/backend/internal/config"
-	"blindspot/backend/internal/errs"
+	"anapsi/backend/internal/config"
+	"anapsi/backend/internal/errs"
 )
 
 var overpassEndpoints = []string{
@@ -56,7 +56,7 @@ func handleOverpassProxy(w http.ResponseWriter, r *http.Request, _ *config.Confi
 			continue
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		req.Header.Set("User-Agent", "Blindspot/1.0 (accessibility assistant)")
+		req.Header.Set("User-Agent", "ANAPSI/1.0 (accessibility assistant)")
 		res, err := client.Do(req)
 		if err != nil {
 			lastErr = err

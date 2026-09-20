@@ -3,8 +3,8 @@ package httpapi
 import (
 	"net/http"
 
-	"blindspot/backend/internal/config"
-	"blindspot/backend/internal/store"
+	"anapsi/backend/internal/config"
+	"anapsi/backend/internal/store"
 )
 
 func handleGamification(w http.ResponseWriter, r *http.Request, cfg *config.Config) {

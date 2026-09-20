@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strings"
 
-	"blindspot/backend/internal/config"
-	"blindspot/backend/internal/errs"
-	"blindspot/backend/internal/store"
+	"anapsi/backend/internal/config"
+	"anapsi/backend/internal/errs"
+	"anapsi/backend/internal/store"
 )
 
 type heartbeatInput struct {

@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"blindspot/backend/internal/config"
-	"blindspot/backend/internal/database"
+	"anapsi/backend/internal/config"
+	"anapsi/backend/internal/database"
 )
 
 // NewRouter wires every HTTP route to its handler. Pattern syntax is Go
@@ -102,7 +102,7 @@ func handleHealth(w http.ResponseWriter, r *http.Request, cfg *config.Config) {
 		authStatus = "configured"
 	}
 	ok(w, map[string]interface{}{
-		"service":  "blindspot-api",
+		"service":  "anapsi-api",
 		"status":   "healthy",
 		"database": databaseStatus,
 		"auth":     authStatus,

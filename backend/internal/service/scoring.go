@@ -3,7 +3,7 @@ package service
 import (
 	"math"
 
-	"blindspot/backend/internal/model"
+	"anapsi/backend/internal/model"
 )
 
 const baseScore = 50

@@ -124,9 +124,9 @@ export function MapPageController() {
   const [realtimeFeatures, setRealtimeFeatures] = useState<MapFeatureReturn[]>([]);
   const [realtimeLoading, setRealtimeLoading] = useState(false);
   const [guidingLines, setGuidingLines] = useState<MapLineFeature[]>([]);
-  const [resultsOpen, setResultsOpen] = useState(true);
-  const [layersOpen, setLayersOpen] = useState(true);
-  const [mobileOpen, setMobileOpen] = useState(true);
+  const [resultsOpen, setResultsOpen] = useState(false);
+  const [layersOpen, setLayersOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [intro, setIntro] = useState(true);
   const [leaving, setLeaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -155,7 +155,7 @@ export function MapPageController() {
     if (leaving || !intro) return;
     setLeaving(true);
     if (force) announceLiveRegion("Memuat peta selesai.", { assertive: true });
-    else announceLiveRegion("Blank spot peta siap. Ketuk 'Mau ke mana?' untuk memilih tujuan.", { assertive: true });
+    else announceLiveRegion("Peta ANAPSI siap. Ketuk 'Mau ke mana?' untuk memilih tujuan.", { assertive: true });
     setTimeout(() => setIntro(false), 520);
   }
 
@@ -302,8 +302,8 @@ export function MapPageController() {
       const q = (event as CustomEvent<{ q?: string }>).detail?.q;
       if (typeof q === "string") handleSearch(q);
     };
-    window.addEventListener("blindspot:voice-search", handler);
-    return () => window.removeEventListener("blindspot:voice-search", handler);
+    window.addEventListener("anapsi:voice-search", handler);
+    return () => window.removeEventListener("anapsi:voice-search", handler);
   }, [handleSearch]);
 
   const locate = () => {
@@ -368,19 +368,19 @@ export function MapPageController() {
   const toggleResults = () => {
     const next = !resultsOpen;
     setResultsOpen(next);
-    announceLiveRegion(next ? "Panel hasil ditutup." : "Panel hasil dibuka. Daftar tempat tersedia.");
+    announceLiveRegion(next ? "Panel hasil dibuka. Daftar tempat tersedia." : "Panel hasil ditutup.");
   };
 
   const toggleLayers = () => {
     const next = !layersOpen;
     setLayersOpen(next);
-    announceLiveRegion(next ? "Panel layer ditutup." : "Panel layer dibuka.");
+    announceLiveRegion(next ? "Panel layer dibuka." : "Panel layer ditutup.");
   };
 
   const toggleMobile = () => {
     const next = !mobileOpen;
     setMobileOpen(next);
-    announceLiveRegion(next ? "Panel bawah ditutup." : "Panel bawah dibuka.");
+    announceLiveRegion(next ? "Panel bawah dibuka." : "Panel bawah ditutup.");
   };
 
   const featuredKinds = activeLayer === "all" ? profileKinds : [activeLayer];
@@ -652,9 +652,9 @@ export function MapPageController() {
           <div className="animate-rise-in px-6 text-center">
             <span
               aria-hidden="true"
-              className="mx-auto flex h-20 w-20 items-center justify-center rounded-24 primary-solid text-primary-foreground shadow-float"
+              className="mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-24 bg-card shadow-float"
             >
-              <Accessibility className="h-10 w-10 animate-pulse-dot" />
+              <img src="/logo.png" alt="" className="h-16 w-16 object-contain" />
             </span>
             <h2 className="mt-6 text-3xl font-black tracking-tight">ANAPSI</h2>
             <p className="label-uppercase mt-1 text-xs text-primary">Peta Aksesibilitas 3D Realtime</p>
@@ -721,9 +721,9 @@ export function MapPageController() {
                 <div className="pointer-events-auto flex flex-wrap items-center gap-1.5 border-b border-border/50 bg-card/90 px-2 py-2 shadow-soft backdrop-blur sm:gap-2.5">
                   <span
                     aria-hidden="true"
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-12 primary-solid text-primary-foreground sm:h-11 sm:w-11"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-12 bg-card shadow-card sm:h-11 sm:w-11"
                   >
-                    <Accessibility className="h-5 w-5" />
+                    <img src="/logo.png" alt="" className="h-full w-full object-contain" />
                   </span>
                   <div className="hidden shrink-0 lg:block">
                     <p className="label-uppercase text-xs leading-none text-primary">Peta Aksesibilitas</p>

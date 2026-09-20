@@ -22,7 +22,7 @@ export interface TourConfig {
   steps: readonly TourStep[];
 }
 
-const P = "blindspot:tour";
+const P = "anapsi:tour";
 export const TOUR_STORAGE_PREFIX = P;
 
 export const FEATURE_TOURS: Record<TourFeature, TourConfig> = {

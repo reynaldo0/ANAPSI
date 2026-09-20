@@ -88,8 +88,31 @@ async function staleWhileRevalidate(req, maxAgeMs) {
     }
     return res;
   } catch {
-    return cached || Response.error();
+    // JANGAN Response.error(): itu membuat fetch di sisi app melempar
+    // NetworkError dan tampil "gangguan jaringan" meski backend cuma offline.
+    // Balas JSON 503 (envelope error sama dengan backend) agar frontend bisa
+    // menampilkan banner offline yang ramah.
+    return cached || offlineJsonResponse();
   }
+}
+
+function offlineJsonResponse() {
+  const body = JSON.stringify({
+    ok: false,
+    error: {
+      code: "offline",
+      message: "Tidak dapat terhubung ke server. Menampilkan data tersimpan terakhir.",
+    },
+  });
+  const bytes = new TextEncoder().encode(body).length;
+  return new Response(body, {
+    status: 503,
+    statusText: "Service Unavailable",
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Content-Length": String(bytes),
+    },
+  });
 }
 
 self.addEventListener("install", (event) => {

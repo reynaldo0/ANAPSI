@@ -4,10 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 
-	"blindspot/backend/internal/auth"
-	"blindspot/backend/internal/config"
-	"blindspot/backend/internal/demo"
-	"blindspot/backend/internal/util"
+	"anapsi/backend/internal/auth"
+	"anapsi/backend/internal/config"
+	"anapsi/backend/internal/demo"
+	"anapsi/backend/internal/util"
 )
 
 // seedPlaces mirrors the demo catalog into the places and entrances tables.
@@ -104,8 +104,8 @@ func seedUsers(db *sql.DB) error {
 	rows := []struct {
 		id, email, displayName, hash, role, createdAt string
 	}{
-		{"u-admin-demo", "admin@blindspot.id", "Admin BLINDSPOT", adminHash, "ADMIN", now},
-		{"u-demo-user", "demo@blindspot.id", "Pengguna Demo", userHash, "USER", now},
+		{"u-admin-demo", "admin@anapsi.dev", "Admin ANAPSI", adminHash, "ADMIN", now},
+		{"u-demo-user", "demo@anapsi.dev", "Pengguna Demo", userHash, "USER", now},
 	}
 	for _, r := range rows {
 		if _, err := db.Exec(

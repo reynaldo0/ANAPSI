@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"blindspot/backend/internal/config"
-	"blindspot/backend/internal/errs"
-	"blindspot/backend/internal/store"
+	"anapsi/backend/internal/config"
+	"anapsi/backend/internal/errs"
+	"anapsi/backend/internal/store"
 )
 
 // streamInterval is how often the admin realtime stream emits a snapshot.

@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-// Config holds every tunable for the Blindspot API server.
+// Config holds every tunable for the ANAPSI API server.
 type Config struct {
 	Port        string
 	MySQLDSN    string
@@ -43,7 +43,7 @@ type Config struct {
 func Load() *Config {
 	return &Config{
 		Port:         envOr("PORT", "8080"),
-		MySQLDSN:     envOr("MYSQL_DSN", "root:@tcp(127.0.0.1:3306)/blindspot?parseTime=true&charset=utf8mb4&collation=utf8mb4_unicode_ci"),
+		MySQLDSN:     envOr("MYSQL_DSN", "root:@tcp(127.0.0.1:3306)/anapsi?parseTime=true&charset=utf8mb4&collation=utf8mb4_unicode_ci"),
 		AuthSecret:   resolveAuthSecret(),
 		GroqAPIKey:   os.Getenv("GROQ_API_KEY"),
 		DatabaseURL:  os.Getenv("DATABASE_URL"),
@@ -99,7 +99,7 @@ func resolveAuthSecret() string {
 			return fresh
 		}
 	}
-	return "blindspot-dev-secret-change-me"
+	return "anapsi-dev-secret-change-me"
 }
 
 func randomSecret() string {

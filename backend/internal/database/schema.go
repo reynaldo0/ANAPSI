@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"blindspot/backend/internal/demo"
+	"anapsi/backend/internal/demo"
 )
 
 // loadPlaces performs a memory load of the demo catalog and mirrors it into

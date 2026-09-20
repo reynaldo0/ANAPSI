@@ -3,11 +3,11 @@ package httpapi
 import (
 	"net/http"
 
-	"blindspot/backend/internal/config"
-	"blindspot/backend/internal/demo"
-	"blindspot/backend/internal/errs"
-	"blindspot/backend/internal/service"
-	"blindspot/backend/internal/store"
+	"anapsi/backend/internal/config"
+	"anapsi/backend/internal/demo"
+	"anapsi/backend/internal/errs"
+	"anapsi/backend/internal/service"
+	"anapsi/backend/internal/store"
 )
 
 // requireAdmin resolves the session and enforces the ADMIN role, mirroring the

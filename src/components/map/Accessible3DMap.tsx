@@ -359,11 +359,11 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
         ) : null}
       </div>
 
-      {/* Dock utilitas — kiri bawah (di atas panel bawah mobile) */}
-<div
+      {/* Dock utilitas — kanan bawah (di atas panel bawah mobile) */}
+      <div
         className={cn(
           "absolute right-3 z-10",
-          "bottom-[calc(10rem+env(safe-area-inset-bottom,0px))]",
+          "bottom-[calc(7.5rem+env(safe-area-inset-bottom,0px))]",
           "md:bottom-16",
         )}
       >
@@ -412,17 +412,20 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
           </div>
         ) : null}
       </div>
-      <div
+      {/* Lokasi saya — kiri bawah, terpisah dari dock utilitas agar tidak saling
+          menimpa dan tidak memenuhi satu sudut dengan banyak kontrol. */}
+      <button
+        type="button"
+        aria-label="Lokasi saya"
+        onClick={onLocate}
         className={cn(
-          "absolute right-3 z-10",
-          "bottom-[calc(10rem+env(safe-area-inset-bottom,0px))]",
-          "md:bottom-16",
+          "absolute z-10 flex h-12 w-12 items-center justify-center rounded-12 border-2 border-border bg-background shadow-float hover:bg-muted",
+          "bottom-[calc(7.5rem+env(safe-area-inset-bottom,0px))] left-3",
+          "md:bottom-20",
         )}
       >
-        <button type="button" aria-label="Lokasi saya" onClick={onLocate} className="flex h-12 w-12 items-center justify-center rounded-12 border-2 border-border bg-background shadow-float hover:bg-muted">
-          <Locate className="h-5 w-5" aria-hidden="true" />
-        </button>
-      </div>
+        <Locate className="h-5 w-5" aria-hidden="true" />
+      </button>
       <p className="sr-only" role="status">Peta 3D aktif. Semua pin juga tersedia sebagai daftar teks yang dapat diakses keyboard di bawah peta.</p>
     </div>
   );

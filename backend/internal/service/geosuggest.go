@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"blindspot/backend/internal/demo"
-	"blindspot/backend/internal/model"
+	"anapsi/backend/internal/demo"
+	"anapsi/backend/internal/model"
 )
 
 // GeoSuggestion is a search-suggestion entry returned by /api/geo/suggest.
@@ -205,7 +205,7 @@ func fetchRemoteSuggestions(q string, origin *model.LatLng) []GeoSuggestion {
 	if err != nil {
 		return nil
 	}
-	req.Header.Set("User-Agent", "ANAPSI-web/1.0 (accessibility navigation demo)")
+	req.Header.Set("User-Agent", "anapsi-web/1.0 (accessibility navigation demo)")
 	req.Header.Set("Accept", "application/json")
 
 	client := &http.Client{Timeout: 4500 * time.Millisecond}

@@ -1,8 +1,8 @@
 package store
 
 import (
-	"blindspot/backend/internal/database"
-	"blindspot/backend/internal/util"
+	"anapsi/backend/internal/database"
+	"anapsi/backend/internal/util"
 )
 
 // SavedPlaceRecord is a saved-place row returned to the client.

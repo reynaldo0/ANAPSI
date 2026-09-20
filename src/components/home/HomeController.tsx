@@ -70,9 +70,17 @@ export function HomeController() {
             {user ? `Halo, ${user.displayName}.` : "Halo, teman ANAPSI."} Cari tempat, dengarkan skor aksesibilitas, dan buat rute aman — semuanya bisa lewat keyboard dan suara.
           </p>
           {choiceMeta ? (
-            <p className="inline-flex items-center gap-2 self-start rounded-full border-2 border-border bg-background/60 px-4 py-2 text-sm font-bold">
-              <choiceMeta.icon className="h-4 w-4 text-primary" aria-hidden="true" /> {choiceMeta.tagline}
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="inline-flex items-center gap-2 self-start rounded-full border-2 border-border bg-background/60 px-4 py-2 text-sm font-bold">
+                <choiceMeta.icon className="h-4 w-4 text-primary" aria-hidden="true" /> {choiceMeta.tagline}
+              </p>
+              <Link
+                href="/profile"
+                className="inline-flex items-center gap-1 self-start rounded-full border-2 border-border bg-background/60 px-3 py-2 text-xs font-bold text-muted-foreground underline-offset-2 hover:bg-muted hover:text-foreground hover:underline"
+              >
+                Ubah profil
+              </Link>
+            </div>
           ) : (
             <div className="flex flex-wrap gap-3">
               <Link href="/onboarding" className="inline-flex h-13 items-center gap-2 rounded-full primary-solid px-6 py-3 font-black text-primary-foreground shadow-card hover:opacity-90">

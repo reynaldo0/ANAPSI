@@ -3,12 +3,13 @@ package service
 import (
 	"encoding/json"
 	"io"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
 
-	"blindspot/backend/internal/demo"
-	"blindspot/backend/internal/model"
+	"anapsi/backend/internal/demo"
+	"anapsi/backend/internal/model"
 )
 
 const corridorRadiusM = 120.0
@@ -130,6 +131,21 @@ func sumPath(points []model.LatLng) float64 {
 
 func destPointAt(a, b model.LatLng, t float64) model.LatLng {
 	return model.LatLng{Lat: a.Lat + (b.Lat-a.Lat)*t, Lng: a.Lng + (b.Lng-a.Lng)*t}
+}
+
+// safeFraction returns t = x/total tanpa menghasilkan NaN/+Inf saat total ≈ 0.
+func safeFraction(x, total float64) float64 {
+	if total <= 0 || math.IsNaN(x) || math.IsInf(x, 0) {
+		return 0.5
+	}
+	t := x / total
+	if t < 0 || math.IsNaN(t) {
+		return 0
+	}
+	if t > 1 {
+		return 1
+	}
+	return t
 }
 
 var sideSign = 1
@@ -500,6 +516,26 @@ func PlanRoutes(origin model.LatLng, originName string, destination *demo.Place,
 
 	dest := model.LatLng{Lat: destination.Lat, Lng: destination.Lng}
 
+	if metersBetween(origin, dest) < 1.0 {
+		// Titik asal & tujuan (hampir) sama. Lewati logika corridor:
+		// t = alongMeters / metersBetween = x/0 menghasilkan NaN/+Inf yang
+		// membuat JSON gagal di-encode (response rusak / "gangguan jaringan").
+		option := toOption(routeOptionInput{
+			ID:              "route-fast",
+			Label:           "Fastest Route",
+			FromName:        originName,
+			ToName:          destination.Name,
+			DestinationID:   destination.ID,
+			DistanceM:       0,
+			DurationMinutes: 1,
+			Reasoning:       []string{"Titik awal sama dengan tujuan — kamu sudah berada di lokasi."},
+			Steps:           []RouteStepInfo{},
+			Geometry:        []model.LatLng{origin, dest},
+		})
+		option.Recommended = true
+		return []RouteOption{option}, "demo"
+	}
+
 	fastPoints := subdivide(origin, dest, legLengthM)
 	fastHits := corridorHits(fastPoints, kinds)
 	fastLike := routeLike{points: fastPoints, hits: fastHits}
@@ -519,7 +555,7 @@ func PlanRoutes(origin model.LatLng, originName string, destination *demo.Place,
 		if meta.Tone != "danger" {
 			continue
 		}
-		midpoint := destPointAt(origin, dest, hit.alongMeters/metersBetween(origin, dest))
+		midpoint := destPointAt(origin, dest, safeFraction(hit.alongMeters, metersBetween(origin, dest)))
 		offset := perpendicularOffsetFastest(origin, dest, midpoint, detourOffsetM)
 		last := accessiblePivots[len(accessiblePivots)-1]
 		if metersBetween(last, offset) < 25 {

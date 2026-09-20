@@ -178,15 +178,13 @@ export function AdminOverviewTab() {
         </div>
       </section>
 
-      {/* Komunitas & tempat */}
+      {/* Cakupan data */}
       <section aria-labelledby="ov-community" className="mt-5 rounded-20 border-2 border-border bg-card p-5 shadow-card">
         <h3 id="ov-community" className="text-lg font-black">
-          Komunitas
+          Cakupan data
         </h3>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           <StatCard label="Pengguna terdaftar" value={stats.totalUsers} />
-          <StatCard label="Tempat favorit disimpan" value={stats.totalSaved} />
-          <StatCard label="Total poin pengguna" value={stats.totalPoints} hint="Gamifikasi" />
           <StatCard label="Tempat dalam katalog" value={stats.totalPlaces} />
           <StatCard label="Fitur peta" value={stats.totalFeatures} />
         </div>

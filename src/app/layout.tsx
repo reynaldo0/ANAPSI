@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const THEME_INIT_SCRIPT = `(function(){try{var raw=localStorage.getItem("blindspot:appearance");var s=raw?JSON.parse(raw):{};var theme=s.theme||"light";var isDark=false;if(theme==="dark"){isDark=true}else if(theme==="system"){isDark=window.matchMedia("(prefers-color-scheme: dark)").matches}var el=document.documentElement;el.setAttribute("data-theme",isDark?"dark":"light");el.style.colorScheme=isDark?"dark":"light";if(s.highContrast)el.setAttribute("data-high-contrast","true");}catch(e){}})();`;
+const THEME_INIT_SCRIPT = `(function(){try{var raw=localStorage.getItem("anapsi:appearance");var s=raw?JSON.parse(raw):{};var theme=s.theme||"light";var isDark=false;if(theme==="dark"){isDark=true}else if(theme==="system"){isDark=window.matchMedia("(prefers-color-scheme: dark)").matches}var el=document.documentElement;el.setAttribute("data-theme",isDark?"dark":"light");el.style.colorScheme=isDark?"dark":"light";if(s.highContrast)el.setAttribute("data-high-contrast","true");}catch(e){}})();`;
 
 export const metadata: Metadata = {
   title: {

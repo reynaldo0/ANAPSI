@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"encoding/json"
 
-	"blindspot/backend/internal/database"
-	"blindspot/backend/internal/util"
+	"anapsi/backend/internal/database"
+	"anapsi/backend/internal/util"
 )
 
 // AdminUser is the administration snapshot of a registered account.

@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"blindspot/backend/internal/config"
-	"blindspot/backend/internal/model"
-	"blindspot/backend/internal/util"
+	"anapsi/backend/internal/config"
+	"anapsi/backend/internal/model"
+	"anapsi/backend/internal/util"
 )
 
 const groqChatURL = "https://api.groq.com/openai/v1/chat/completions"
@@ -21,10 +21,10 @@ const groqSTTURL = "https://api.groq.com/openai/v1/audio/transcriptions"
 const GroqChatModel = "openai/gpt-oss-20b"
 const GroqSTTModel = "whisper-large-v3-turbo"
 
-const chatbotSystemPrompt = `Kamu adalah BLINDSPOT Voice Chatbot khusus tunanetra. Kamu adalah teman ngobrol empatik, ringkas, dan audio-first. Kebanyakan pengguna bicara lewat suara (hasil speech-to-text bisa ada typo/wrong word) — jadi jawab untuk didengarkan, bukan dibaca sekilas.
+const chatbotSystemPrompt = `Kamu adalah ANAPSI Voice Chatbot khusus tunanetra. Kamu adalah teman ngobrol empatik, ringkas, dan audio-first. Kebanyakan pengguna bicara lewat suara (hasil speech-to-text bisa ada typo/wrong word) — jadi jawab untuk didengarkan, bukan dibaca sekilas.
 Aturan wajib:
 1. Jawab singkat (1-3 kalimat), bahasa Indonesia yang santun dan jelas. Tidak bertele-tele.
-2. Utamakan konteks/ DATA BLINDSPOT yang diberikan. Jika user menanyakan aksesibilitas tempat TERTENTU dan konteks tidak memuat tempat itu, JANGAN mengarang angkanya. Katakan jujur: "Data khusus tempat itu belum saya temukan — mau saya bantu cari di peta?" lalu beri 1 aksi.
+2. Utamakan konteks/ DATA ANAPSI yang diberikan. Jika user menanyakan aksesibilitas tempat TERTENTU dan konteks tidak memuat tempat itu, JANGAN mengarang angkanya. Katakan jujur: "Data khusus tempat itu belum saya temukan — mau saya bantu cari di peta?" lalu beri 1 aksi.
 3. Jika pertanyaan user tidak jelas/terpotong (hasil STT), jangan menebak panjang: tanya balik dengan SATU pertanyaan singkat untuk memastikan.
 4. Akhiri hampir setiap jawaban dengan 1 aksi: "Mau saya carikan rute, bacakan hambatan, atau saya laporkan?"
 5. Kalau user lagi jalan/menuju tempat: berikan urutan langkah pendek (belok kanan, lurus 50 meter) bila ada data; jika ragu, sarankan hati-hati dan cari rute aman.
@@ -57,7 +57,7 @@ type CompletionParams struct {
 	context string
 }
 
-// NewCompletionParams bundles chat history, the user's message and BLINDSPOT
+// NewCompletionParams bundles chat history, the user's message and ANAPSI
 // context for GroqChat.
 func NewCompletionParams(history []HistoryMessage, msg, context string) CompletionParams {
 	return CompletionParams{history: history, msg: msg, context: context}

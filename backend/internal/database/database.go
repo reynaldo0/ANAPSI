@@ -9,7 +9,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 
-	"blindspot/backend/internal/config"
+	"anapsi/backend/internal/config"
 )
 
 // DB is the process-wide MySQL connection pool. It is initialized by Ensure

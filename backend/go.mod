@@ -1,4 +1,4 @@
-module blindspot/backend
+module anapsi/backend
 
 go 1.26.0
 

@@ -1,8 +1,8 @@
-# Ganti blindspot.example.com dengan domain asli milikmu.
+# Ganti anapsi.example.com dengan domain asli milikmu.
 # Jika cuma memakai IP (tanpa domain), Caddy tidak bisa menerbitkan sertifikat
 # gratis; arahkan domain/DNS dulu, atau gunakan HTTPS dengan self-signed.
 
-blindspot.example.com {
+anapsi.example.com {
 	encode zstd gzip
 
 	reverse_proxy web:3000
