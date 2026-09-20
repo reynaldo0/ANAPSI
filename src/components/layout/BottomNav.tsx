@@ -7,7 +7,7 @@ import {
   Map,
   Megaphone,
   Users,
-  User,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -25,7 +25,7 @@ const BOTTOM_NAV: NavItem[] = [
   { href: "/map", label: "Peta", Icon: Map },
   { href: "/report", label: "Lapor", Icon: Megaphone, primary: true },
   { href: "/community", label: "Komunitas", Icon: Users },
-  { href: "/profile", label: "Profil", Icon: User },
+  { href: "/profile", label: "Setelan", Icon: Settings },
 ];
 
 function isActive(pathname: string, href: string): boolean {
