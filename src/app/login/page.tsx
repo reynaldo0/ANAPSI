@@ -36,14 +36,19 @@ function LoginForm() {
 
     setSubmitting(true);
     const success = await login(email.trim(), password);
-    setSubmitting(false);
-    if (!success) return;
+    if (!success) {
+      setSubmitting(false);
+      return;
+    }
 
     toast({ tone: "success", title: "Berhasil masuk", message: "Selamat datang kembali!" });
     announceLiveRegion("Kamu berhasil masuk.", { assertive: true });
     const safeReturnTo =
       returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/profile";
-    router.replace(safeReturnTo);
+
+    // Gunakan window.location untuk hard navigation — memastikan AuthContext
+    // ter-refresh dan tidak ada race condition dengan React state flush.
+    window.location.replace(safeReturnTo);
   };
 
   return (

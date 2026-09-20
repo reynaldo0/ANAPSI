@@ -38,8 +38,10 @@ export default function RegisterPage() {
 
     setSubmitting(true);
     const success = await register({ displayName: displayName.trim(), email: email.trim(), password });
-    setSubmitting(false);
-    if (!success) return;
+    if (!success) {
+      setSubmitting(false);
+      return;
+    }
 
     announceLiveRegion("Akun berhasil dibuat. Siapkan profil aksesibilitasmu.", {
       assertive: true,
@@ -49,7 +51,9 @@ export default function RegisterPage() {
       title: "Akun berhasil dibuat",
       message: "Sekarang pilih profil aksesibilitasmu.",
     });
-    router.replace("/onboarding");
+
+    // Hard navigation agar session cookie langsung terbaca
+    window.location.replace("/onboarding");
   };
 
   return (

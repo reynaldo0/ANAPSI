@@ -97,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (body?.data) setUser(body.data);
       return true;
     } catch {
-      setError("Koneksi gagal. Pastikan server berjalan.");
+      setError("Tidak dapat terhubung ke server. Pastikan backend Go dan MySQL sudah dijalankan.");
       return false;
     }
   }, []);
@@ -122,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (body?.data) setUser(body.data);
       return true;
     } catch {
-      setError("Koneksi gagal. Pastikan server berjalan.");
+      setError("Tidak dapat terhubung ke server. Pastikan backend Go dan MySQL sudah dijalankan.");
       return false;
     }
   }, []);
