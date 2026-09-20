@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -29,6 +30,7 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const SESSION_CACHE_KEY = "anapsi:session-cache";
 
 async function parseApiResponse<T>(response: Response): Promise<T | null> {
   try {
@@ -38,26 +40,69 @@ async function parseApiResponse<T>(response: Response): Promise<T | null> {
   }
 }
 
+/** Baca cache session dari localStorage (null kalau tidak ada/corrupt). */
+function readCachedUser(): PublicUser | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(SESSION_CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as PublicUser;
+  } catch {
+    return null;
+  }
+}
+
+/** Simpan user ke cache, atau hapus kalau null. */
+function writeCachedUser(user: PublicUser | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (user) {
+      localStorage.setItem(SESSION_CACHE_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(SESSION_CACHE_KEY);
+    }
+  } catch {
+    // storage mungkin penuh — abaikan
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<PublicUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Inisialisasi user dari cache dulu agar UI tidak flicker ke "belum login"
+  const [user, setUserState] = useState<PublicUser | null>(() => readCachedUser());
+  // loading=false kalau ada cache (sudah ada sesuatu untuk ditampilkan),
+  // loading=true hanya kalau benar-benar belum ada data sama sekali.
+  const [loading, setLoading] = useState<boolean>(() => readCachedUser() === null);
   const [error, setError] = useState<string | null>(null);
+  const refreshInFlight = useRef(false);
 
   const clearError = useCallback(() => setError(null), []);
 
+  // Wrapper setUser yang juga update cache
+  const setUser = useCallback((u: PublicUser | null) => {
+    writeCachedUser(u);
+    setUserState(u);
+  }, []);
+
   const refresh = useCallback(async () => {
+    if (refreshInFlight.current) return;
+    refreshInFlight.current = true;
     try {
       const response = await fetch("/api/auth/me", { cache: "no-store" });
       if (!response.ok) {
-        setUser(null);
+        // 401 = session expired/tidak ada → hapus cache
+        if (response.status === 401) setUser(null);
+        // 5xx/network error → pertahankan cache yang ada (jangan logout paksa)
         return;
       }
       const body = await parseApiResponse<{ ok: boolean; data: PublicUser }>(response);
       if (body?.data) setUser(body.data);
     } catch {
-      setUser(null);
+      // Network error → pertahankan cache (user tetap "logged in" secara lokal)
+      // jangan setUser(null) di sini
+    } finally {
+      refreshInFlight.current = false;
     }
-  }, []);
+  }, [setUser]);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,7 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError("Tidak dapat terhubung ke server. Pastikan backend Go dan MySQL sudah dijalankan.");
       return false;
     }
-  }, []);
+  }, [setUser]);
 
   const register = useCallback(async (input: RegisterInput): Promise<boolean> => {
     setError(null);
@@ -125,7 +170,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError("Tidak dapat terhubung ke server. Pastikan backend Go dan MySQL sudah dijalankan.");
       return false;
     }
-  }, []);
+  }, [setUser]);
 
   const logout = useCallback(async () => {
     setError(null);
@@ -135,7 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Keluar tetap berlaku di sisi klien meski server tidak dapat dijangkau.
     }
     setUser(null);
-  }, []);
+  }, [setUser]);
 
   const value = useMemo(
     () => ({ user, loading, error, clearError, refresh, login, register, logout }),

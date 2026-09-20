@@ -10,9 +10,6 @@ import {
   ShieldCheck,
   Bookmark,
   FileText,
-  Eye,
-  Accessibility,
-  Sparkles,
   Sun,
   Moon,
   Monitor,
@@ -239,10 +236,17 @@ export default function ProfilePage() {
       {/* ═══ AKUN ═══ */}
       <SectionTitle>Akun</SectionTitle>
 
-      {loading ? (
+      {/* loading=true hanya saat TIDAK ada cache sama sekali (first time visitor) */}
+      {loading && !user ? (
         <SettingCard>
           <div className="py-4">
-            <p className="text-sm text-muted-foreground">Memeriksa sesi…</p>
+            <div className="flex items-center gap-3">
+              <span className="h-12 w-12 shrink-0 animate-pulse rounded-full bg-muted" />
+              <div className="flex-1 space-y-2">
+                <span className="block h-4 w-32 animate-pulse rounded bg-muted" />
+                <span className="block h-3 w-48 animate-pulse rounded bg-muted" />
+              </div>
+            </div>
           </div>
         </SettingCard>
       ) : user ? (

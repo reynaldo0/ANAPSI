@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { announceLiveRegion } from "@/lib/announcement";
 import { useAuth } from "@/lib/state/AuthContext";
@@ -15,7 +14,6 @@ interface FieldErrors {
 }
 
 export default function RegisterPage() {
-  const router = useRouter();
   const { register, error } = useAuth();
   const { toast } = useToast();
 
