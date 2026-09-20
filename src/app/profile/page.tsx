@@ -347,7 +347,7 @@ export default function ProfilePage() {
             </div>
             <div className="mt-4 grid grid-cols-2 gap-2">
               <Link
-                href="/login"
+                href="/login?returnTo=/profile"
                 className="flex items-center justify-center gap-2 rounded-14 border border-border bg-background py-3 text-sm font-bold text-foreground transition-colors hover:bg-muted"
               >
                 <LogIn className="h-4 w-4" aria-hidden="true" />
