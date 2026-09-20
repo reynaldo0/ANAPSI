@@ -7,7 +7,7 @@ import {
   Map,
   Megaphone,
   Users,
-  Settings,
+  User,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -16,7 +16,6 @@ interface NavItem {
   href: string;
   label: string;
   Icon: LucideIcon;
-  /** Tombol aksi utama ditampilkan lebih menonjol */
   primary?: boolean;
 }
 
@@ -25,7 +24,7 @@ const BOTTOM_NAV: NavItem[] = [
   { href: "/map", label: "Peta", Icon: Map },
   { href: "/report", label: "Lapor", Icon: Megaphone, primary: true },
   { href: "/community", label: "Komunitas", Icon: Users },
-  { href: "/profile", label: "Setelan", Icon: Settings },
+  { href: "/profile", label: "Profil", Icon: User },
 ];
 
 function isActive(pathname: string, href: string): boolean {
