@@ -950,8 +950,8 @@ export function MapPageController() {
                 )}
               </div>
 
-              {/* Status bawah (desktop) — di atas dock gerakan kiri bawah */}
-              <div className="pointer-events-none absolute bottom-[12.5rem] left-3 z-10 hidden items-center gap-2 md:flex">
+              {/* Status bawah (desktop) — pojok kiri bawah */}
+              <div className="pointer-events-none absolute bottom-8 left-3 z-10 hidden items-center gap-2 md:flex">
                 <p className="pointer-events-auto rounded-12 border border-border/60 bg-card/85 px-3 py-1.5 text-xs text-muted-foreground shadow-float backdrop-blur">
                   {currentLocationLabel
                     ? `Posisi awal: ${currentLocationLabel}`

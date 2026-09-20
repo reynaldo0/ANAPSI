@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Box, Compass, Layers3, Locate, Minus, MoveDown, MoveLeft, MoveRight, MoveUp, Plus } from "lucide-react";
+import { Locate, Minus, Plus } from "lucide-react";
 import { announceLiveRegion } from "@/lib/announcement";
 import { useAudioManager } from "@/lib/audio/AudioManager";
 import { AudioPriority } from "@/types";
@@ -52,9 +52,10 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
   const mapRef = useRef<unknown>(null);
   const lineReadyRef = useRef(false);
   const audio = useAudioManager();
-  const [is3D, setIs3D] = useState(true);
-  const [terrainOn, setTerrainOn] = useState(true);
   const [loaded, setLoaded] = useState(false);
+  // Peta ANAPSI selalu tampil 3D dengan relief — bukan mode yang diubah-ubah.
+  const is3D = true;
+  const terrainOn = true;
 
   const zoomStep = (in_: boolean = true) => {
     const m = mapRef.current as { zoomIn?: () => void; zoomOut?: () => void } | null;
@@ -83,16 +84,6 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
     },
     [loaded],
   );
-
-  const resetNorth = useCallback(() => {
-    const m = mapRef.current as { resetNorth?: () => void; easeTo?: (o: unknown) => void } | null;
-    if (!m || !loaded) return;
-    try {
-      m.resetNorth?.();
-      m.easeTo?.({ pitch: is3D ? 55 : 0, bearing: is3D ? -12 : 0, duration: 600 });
-      announceLiveRegion("Arah peta dikembalikan ke utara.", { assertive: true });
-    } catch {}
-  }, [loaded, is3D]);
 
   /** Tombol panah keyboard di dalam peta — gantikan gesture geser untuk pengguna yang tidak bisa geser. */
   useEffect(() => {
@@ -329,83 +320,24 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
         ref={containerRef}
         role="application"
         tabIndex={0}
-        aria-label="Peta 3D interaktif gratis. Tombol panah di kanan atas mengarahkan arah peta. Cubit zoom, putar 2 jari untuk 3D. Tombol panah keyboard juga menggerakkan peta. Bagi tunanetra, gunakan daftar tempat di bawah peta sebagai alternatif utama."
+        aria-label="Peta 3D interaktif gratis. Cubit zoom, putar 2 jari untuk 3D. Tombol panah keyboard juga menggerakkan peta. Bagi tunanetra, gunakan daftar tempat di bawah peta sebagai alternatif utama."
         className={tall ? "h-full w-full" : "h-[420px] w-full sm:h-[560px]"}
         style={{ background: "#e5e7eb" }}
       />
       {!loaded ? <div className="absolute inset-0 grid place-items-center bg-muted/60 text-sm text-muted-foreground">Memuat peta 3D gratis…</div> : null}
 
-      {/* Dock gerakan (arah) — mobile: kiri atas kompak (peta tetap fokus),
-          desktop: kiri bawah */}
-      <div
-        className={cn(
-          "absolute z-10",
-          "left-2 top-[calc(12rem+env(safe-area-inset-top,0px))]",
-          "md:left-3 md:right-auto md:top-auto md:bottom-3",
-        )}
-      >
-        {loaded ? (
-          <div className="grid grid-cols-3 gap-0.5 rounded-12 border-2 border-border bg-background p-1.5 shadow-float sm:gap-1 sm:p-2">
-            <span aria-hidden="true" />
-            <button
-              type="button"
-              aria-label="Arahkan peta ke utara"
-              onClick={() => panMap(0, panStep())}
-              className="flex h-10 w-10 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-11 sm:w-11"
-            >
-              <MoveUp className="h-5 w-5" aria-hidden="true" />
-            </button>
-            <span aria-hidden="true" />
-            <button
-              type="button"
-              aria-label="Arahkan peta ke barat"
-              onClick={() => panMap(panStep(), 0)}
-              className="flex h-10 w-10 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-11 sm:w-11"
-            >
-              <MoveLeft className="h-5 w-5" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              aria-label="Kembalikan arah peta ke utara"
-              onClick={resetNorth}
-              title="Arah utara"
-              className="flex h-10 w-10 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-11 sm:w-11"
-            >
-              <Compass className="h-5 w-5" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              aria-label="Arahkan peta ke timur"
-              onClick={() => panMap(-panStep(), 0)}
-              className="flex h-10 w-10 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-11 sm:w-11"
-            >
-              <MoveRight className="h-5 w-5" aria-hidden="true" />
-            </button>
-            <span aria-hidden="true" />
-            <button
-              type="button"
-              aria-label="Arahkan peta ke selatan"
-              onClick={() => panMap(0, -panStep())}
-              className="flex h-10 w-10 items-center justify-center rounded-10 text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-11 sm:w-11"
-            >
-              <MoveDown className="h-5 w-5" aria-hidden="true" />
-            </button>
-            <span aria-hidden="true" />
-          </div>
-        ) : null}
-      </div>
-
-      {/* Dock utilitas satu kolom kompak — kanan bawah (di atas panel mobile):
-          Lokasi Saya → zoom → 3D → terrain (desktop saja). */}
+      {/* Dock kontrol — menempel di pojok KANAN BAWAH peta: Lokasi Saya → zoom ±.
+          Hanya kontrol penting yang ada di peta; sisanya lewat halaman & panel
+          bawah agar peta tetap fokus dan menarik. */}
       <div
         className={cn(
           "absolute right-3 z-10",
-          "bottom-[calc(7.5rem+env(safe-area-inset-bottom,0px))]",
+          "bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))]",
           "md:bottom-16",
         )}
       >
         {loaded ? (
-          <div className="flex flex-col gap-1.5 rounded-14 border-2 border-border bg-background p-1.5 shadow-float">
+          <div className="flex flex-col items-center gap-1.5 rounded-14 border-2 border-border bg-background p-1.5 shadow-float">
             <button
               type="button"
               aria-label="Lokasi saya"
@@ -435,29 +367,6 @@ export function Accessible3DMap({ places, features, selectedPlaceId, onSelectPla
                 <Minus className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setIs3D((v) => !v)}
-              aria-pressed={is3D}
-              aria-label={is3D ? "Matikan tampilan 3D" : "Aktifkan tampilan 3D"}
-              title={is3D ? "Tampilan 3D aktif" : "Tampilan 3D nonaktif"}
-              className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-10 border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                is3D ? "border-primary bg-primary text-primary-foreground" : "border-border text-foreground hover:bg-muted",
-              )}
-            >
-              <Box className="h-4 w-4" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setTerrainOn((v) => !v)}
-              aria-pressed={terrainOn}
-              aria-label={terrainOn ? "Matikan terrain 3D" : "Aktifkan terrain 3D"}
-              title={terrainOn ? "Terrain 3D aktif" : "Terrain 3D nonaktif"}
-              className="hidden h-10 w-10 items-center justify-center rounded-10 border border-border text-foreground transition-colors hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex"
-            >
-              <Layers3 className="h-4 w-4" aria-hidden="true" />
-            </button>
           </div>
         ) : null}
       </div>
