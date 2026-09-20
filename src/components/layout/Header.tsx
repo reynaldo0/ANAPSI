@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Accessibility, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { APP_NAME, NAV_ITEMS } from "@/lib/constants";
 import { useAuth } from "@/lib/state/AuthContext";
 import { cn } from "@/lib/cn";
@@ -19,7 +19,7 @@ export function AppHeader() {
     <header className="sticky top-0 z-40 border-b border-border/60 glass lg:hidden">
       <nav aria-label="Navigasi utama" className="mx-auto flex h-[60px] w-full max-w-6xl items-center justify-between gap-4 px-4">
         <Link href="/" className="flex shrink-0 items-center gap-2.5">
-          <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-12 primary-solid text-primary-foreground shadow-card"><Accessibility className="h-5 w-5" /></span>
+          <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-12 shadow-card"><img src="/logo.png" alt="" className="h-9 w-9 object-contain" /></span>
           <span className="text-[1.35rem] font-black tracking-tighter">{APP_NAME}<span className="text-grad">.</span></span>
         </Link>
         <ul className="hidden items-center gap-1 md:flex">

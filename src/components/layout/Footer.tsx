@@ -9,7 +9,10 @@ export function AppFooter() {
   return (
     <footer className="border-t-2 border-border bg-card">
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
-        <p className="text-lg font-black tracking-tight text-primary">{APP_NAME}</p>
+        <div className="flex items-center gap-3">
+          <img src="/logo.png" alt="" className="h-10 w-10 object-contain" />
+          <p className="text-lg font-black tracking-tight text-primary">{APP_NAME}</p>
+        </div>
         <p className="text-muted-foreground">{APP_TAGLINE}</p>
         <p className="mt-4 max-w-2xl text-sm text-muted-foreground">
           Data aksesibilitas berasal dari laporan komunitas dan tidak menjamin kondisi aktual di

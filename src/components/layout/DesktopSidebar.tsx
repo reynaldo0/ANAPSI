@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Accessibility,
   Home,
   LogIn,
   LogOut,
@@ -50,9 +49,9 @@ export function DesktopSidebar() {
         <Link href="/" className="flex items-center gap-3 px-5 pb-4 pt-6">
           <span
             aria-hidden="true"
-            className="flex h-11 w-11 items-center justify-center rounded-12 primary-solid text-primary-foreground shadow-card"
+            className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-12 shadow-card"
           >
-            <Accessibility className="h-6 w-6" />
+            <img src="/logo.png" alt="" className="h-11 w-11 object-contain" />
           </span>
           <span className="min-w-0">
             <span className="label-uppercase block text-lg tracking-tight text-primary">
